@@ -11,3 +11,5 @@ by turning on the XBotCommunicationPlugin.
 ```
 rosservice call /XBotCommunicationPlugin_switch 1
 ```
+
+Then run the module as `rosrun centauro_tools wholebody_action_server --config path_to_config_file`
