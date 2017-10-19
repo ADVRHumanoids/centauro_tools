@@ -17,13 +17,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __WBC_ACTION_H__
-#define __WBC_ACTION_H__
+#ifndef __WBC_ACTIONS_H__
+#define __WBC_ACTIONS_H__
 
 #include <ros/ros.h>
 #include <rosconsole/macros_generated.h>
-#include <wholebody_keyboard_ctrl/LegMovementAction.h>
 #include <actionlib/server/simple_action_server.h>
+#include <centauro_tools/LegMovementAction.h>
 
 #include <OpenSoT/utils/AutoStack.h>
 #include <OpenSoT/tasks/velocity/Cartesian.h>
@@ -63,9 +63,9 @@ namespace centauro {
         
     private:
         
-        typedef actionlib::SimpleActionServer<wholebody_keyboard_ctrl::LegMovementAction> ActionServer;
+        typedef actionlib::SimpleActionServer<centauro_tools::LegMovementAction> ActionServer;
         
-        void execute_cb(const wholebody_keyboard_ctrl::LegMovementGoalConstPtr& goal);
+        void execute_cb(const centauro_tools::LegMovementGoalConstPtr& goal);
         
         bool check_tol(double tol);
         
@@ -227,7 +227,7 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
 }
 
 
-void centauro::LegMovementAction::execute_cb(const wholebody_keyboard_ctrl::LegMovementGoalConstPtr& goal)
+void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGoalConstPtr& goal)
 {
     
     std::cout << __func__ << std::endl;
@@ -299,7 +299,7 @@ void centauro::LegMovementAction::execute_cb(const wholebody_keyboard_ctrl::LegM
     }
     
     if(success){
-        wholebody_keyboard_ctrl::LegMovementResult result;
+        centauro_tools::LegMovementResult result;
         _action_server->setSucceeded(result);
     }
     else{

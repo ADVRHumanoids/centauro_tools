@@ -1,4 +1,4 @@
-#include <centauro_tools/LegMovementAction.h>
+#include <centauro_tools/LegMovementActionClass.h>
 #include <eigen3/Eigen/Dense>
 #include <functional>
 #include <robot_state_publisher/robot_state_publisher.h>
