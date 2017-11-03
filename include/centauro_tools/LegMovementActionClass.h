@@ -202,7 +202,7 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
     
     _autostack = (  
                     ( waist_feet_position_aggregated  ) /
-                    ( world_feet_orientation_aggregated + rolling_tasks_aggregated ) /
+                    ( world_feet_orientation_aggregated + _rolling_tasks[0] + _rolling_tasks[1] + _rolling_tasks[2] + _rolling_tasks[3] ) /
                     ( _left_arm_cartesian + _right_arm_cartesian  ) 
                   )  << _joint_pos_lims << _joint_vel_lims;
                  
@@ -250,7 +250,7 @@ void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGo
     _wheel_enabled[3] = goal->wheel_rotation_enabled_bl;
     
     for(int i = 0; i < _num_feet; i++){
-//         _rolling_tasks[i]->setActive(_wheel_enabled[i]);
+        _rolling_tasks[i]->setActive(_wheel_enabled[i]);
     }
     
     double TIMEOUT_TIME = 10.0;
