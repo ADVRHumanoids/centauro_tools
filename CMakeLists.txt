@@ -112,6 +112,7 @@ endif()
 include_directories(include ${catkin_INCLUDE_DIRS} ${OpenSoT_INCLUDE_DIRS})
 
 add_executable(wholebody_action_server src/wholebody_action_server.cpp)
+add_dependencies(wholebody_action_server roscpp_generate_messages_cpp)
 target_link_libraries(wholebody_action_server ${Boost_LIBRARIES} 
                                               ${catkin_LIBRARIES} 
                                               ${OpenSoT_LIBRARIES} 
