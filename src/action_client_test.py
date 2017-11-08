@@ -15,25 +15,25 @@ def wholebody_client():
     # Creates a goal to send to the action server.
     goal = wbmsg.LegMovementGoal()
 
-    goal.goal_pos_fl_x = 0.45
-    goal.goal_pos_fl_y = 0.15
-    goal.goal_pos_fl_z = -0.57
-    goal.wheel_rotation_enabled_fl = False
+    goal.goal_pos_fl_x = 0.50
+    goal.goal_pos_fl_y = 0.22
+    goal.goal_pos_fl_z = -0.60
+    goal.wheel_rotation_enabled_fl = True
 
-    goal.goal_pos_fr_x = 0.4
-    goal.goal_pos_fr_y = -0.4
-    goal.goal_pos_fr_z = -0.57
+    goal.goal_pos_fr_x = 0.40
+    goal.goal_pos_fr_y = -0.40
+    goal.goal_pos_fr_z = -0.60
     goal.wheel_rotation_enabled_fr = False
 
-    goal.goal_pos_bl_x = -0.4
-    goal.goal_pos_bl_y =  0.4
-    goal.goal_pos_bl_z = -0.57
+    goal.goal_pos_bl_x = -0.40
+    goal.goal_pos_bl_y =  0.40
+    goal.goal_pos_bl_z = -0.60
     goal.wheel_rotation_enabled_bl = False
 
     goal.goal_pos_br_x = -0.35
     goal.goal_pos_br_y = -0.4
-    goal.goal_pos_br_z = -0.57
-    goal.wheel_rotation_enabled_br = True
+    goal.goal_pos_br_z = -0.60
+    goal.wheel_rotation_enabled_br = False
 
     # Sends the goal to the action server.
     client.send_goal(goal)

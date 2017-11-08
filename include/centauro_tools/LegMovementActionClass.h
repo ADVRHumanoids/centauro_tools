@@ -47,6 +47,8 @@
 
 #define WHEEL_RADIUS 0.075
 
+using XBot::Logger;
+
 namespace centauro {
     
     namespace VelocityTask = OpenSoT::tasks::velocity;
@@ -69,6 +71,15 @@ namespace centauro {
         
         bool check_tol(double tol);
         
+        void compute_trajectory(const Eigen::Vector3d& start, 
+                                const Eigen::Vector3d& goal,
+                                const Eigen::Vector3d& qdotmax,
+                                double start_time,
+                                double time,
+                                double& end_time,
+                                Eigen::Vector3d& current);
+                                
+        
         XBot::MatLogger::Ptr _logger;
         
         ros::NodeHandle _nh;
@@ -77,7 +88,7 @@ namespace centauro {
         
         double _loop_rate;
         
-        std::vector<Eigen::Affine3d> _goal_pos;
+        std::vector<Eigen::Affine3d> _goal_pos, _traj_pos, _start_pos;
         std::vector<bool> _wheel_enabled;
         
         XBot::ModelInterface::Ptr _model;
@@ -133,7 +144,7 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
     
     for(int i = 0; i < _num_feet; i++){
 
-        _feet_waist_cartesian_tasks.push_back( boost::make_shared<VelocityTask::Cartesian>("CARTESIAN_" + std::to_string(i),
+        _feet_waist_cartesian_tasks.push_back( boost::make_shared<VelocityTask::Cartesian>("CARTESIAN_" + std::to_string(i) + "_waist",
                                                                            _q,
                                                                             *_model,
                                                                             _feet_links[i],
@@ -141,7 +152,7 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
                                                                             )
                                        );
         
-        _feet_waist_cartesian_tasks[i]->setLambda(0.01);
+        _feet_waist_cartesian_tasks[i]->setLambda(0.1);
         
         _feet_world_cartesian_tasks.push_back( boost::make_shared<VelocityTask::Cartesian>("CARTESIAN_" + std::to_string(i),
                                                                            _q,
@@ -202,15 +213,14 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
     
     _autostack = (  
                     ( waist_feet_position_aggregated  ) /
-                    ( world_feet_orientation_aggregated + _rolling_tasks[0] + _rolling_tasks[1] + _rolling_tasks[2] + _rolling_tasks[3] ) /
-                    ( _left_arm_cartesian + _right_arm_cartesian  ) 
+                    ( world_feet_orientation_aggregated + _rolling_tasks[0] + _rolling_tasks[1] + _rolling_tasks[2] + _rolling_tasks[3] + _left_arm_cartesian + _right_arm_cartesian ) 
                   )  << _joint_pos_lims << _joint_vel_lims;
                  
     _autostack->update(_q);
     
     _autostack->getStack();
     
-    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(), 1e6) );
+    _solver.reset( new OpenSoT::solvers::QPOases_sot(_autostack->getStack(), _autostack->getBounds(), 1e9) );
     
     /* Init model log */
     _model->initLog(_logger, 1e5);
@@ -230,7 +240,7 @@ centauro::LegMovementAction::LegMovementAction(XBot::ModelInterface::Ptr model,
 void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGoalConstPtr& goal)
 {
     
-    std::cout << __func__ << std::endl;
+    Logger::info(Logger::Severity::HIGH) << "Goal received" << Logger::endl();
     
     ros::Rate loop_rate(_loop_rate);
     
@@ -253,11 +263,25 @@ void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGo
         _rolling_tasks[i]->setActive(_wheel_enabled[i]);
     }
     
-    double TIMEOUT_TIME = 10.0;
+    /* Set start pose to current pose */
+    _start_pos = _goal_pos;
+    _traj_pos = _goal_pos;
+    {
+        std::lock_guard<std::mutex> guard(*_model_mtx);
+        for(int i = 0; i < _num_feet; i++){
+            _model->getPose(_feet_links[i], "pelvis", _start_pos[i]);
+        }
+    }
+    
+
+    double start_time = ros::Time::now().toSec();
+    double TIMEOUT_TIME = 100.0;
     
     bool success = false;
     
     while( ((ros::Time::now() - t0).toSec() <= TIMEOUT_TIME) && !success ){
+        
+        Logger::info() << "Looping.." << Logger::endl();
         
         /* Check for action preemption */
         if(!ros::ok() || _action_server->isPreemptRequested()){
@@ -267,14 +291,31 @@ void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGo
     
         /* Update cartesians */
         for(int i = 0; i < _num_feet; i++){
-            _feet_waist_cartesian_tasks[i]->setReference(_goal_pos[i].matrix());
-            _feet_world_cartesian_tasks[i]->setReference(_goal_pos[i].matrix());
+            
+            double end_time;
+            Eigen::Vector3d ref;
+            compute_trajectory(_start_pos[i].translation(), 
+                               _goal_pos[i].translation(),
+                               Eigen::Vector3d(0.10, 0.10, 0.10),
+                               start_time,
+                               ros::Time::now().toSec(),
+                               end_time,
+                               ref
+                          );
+            _traj_pos[i].translation() = ref;
+            
+            _feet_waist_cartesian_tasks[i]->setReference(_traj_pos[i].matrix());
+            _feet_world_cartesian_tasks[i]->setReference(_traj_pos[i].matrix());
         }
         
         { // model is shared between threads and needs to be accessed in a critical section
             std::lock_guard<std::mutex>(*_model_mtx);
             _autostack->update(_q);
             _autostack->log(_logger);
+            
+            for(int i = 0; i < _num_feet; i++){
+                _feet_waist_cartesian_tasks[i]->log(_logger);
+            }
         }
         
         if(!_solver->solve(_dq)){
@@ -299,6 +340,7 @@ void centauro::LegMovementAction::execute_cb(const centauro_tools::LegMovementGo
     }
     
     if(success){
+        Logger::success(Logger::Severity::HIGH) << "Action performed!" << Logger::endl();
         centauro_tools::LegMovementResult result;
         _action_server->setSucceeded(result);
     }
@@ -314,13 +356,52 @@ bool centauro::LegMovementAction::check_tol(double tol)
     
     double dq_norm = _dq.array().abs().maxCoeff();
     
-    for(VelocityTask::Cartesian::Ptr task : _feet_waist_cartesian_tasks){
-        err += task->getError().head<3>().norm();
+    for(int i = 0; i < _num_feet; i++){
+        Eigen::MatrixXd ref;
+        Eigen::VectorXd vref;
+        _feet_waist_cartesian_tasks[i]->getReference(ref,vref);
+        err += (ref.block<3,1>(0,3) - _goal_pos[i].translation()).norm();
     }
     
     err /= std::sqrt(3 * _num_feet);
     
     return err <= tol && dq_norm <= 0.0001;
+}
+
+void centauro::LegMovementAction::compute_trajectory(const Eigen::Vector3d& start, 
+                                const Eigen::Vector3d& goal,
+                                const Eigen::Vector3d& qdotmax,
+                                double start_time,
+                                double time,
+                                double& end_time,
+                                Eigen::Vector3d& current)
+{
+    double max_time = -1;
+    
+    Logger::info() << "Start: " << start.transpose()  << "\n Goal: " << goal.transpose() << Logger::endl();
+    
+    for(int i = 0; i < start.size(); i++){
+        max_time = std::max(max_time, std::fabs(1.875*(goal(i)-start(i))/qdotmax(i)));
+        Logger::info() << "Max time : " << max_time << Logger::endl();
+    }
+    
+    if(max_time < 0.001){
+        current = goal;
+        return;
+    }
+    
+    end_time = start_time + max_time;
+    
+    double tau = (time - start_time) / (end_time - start_time);
+    double alpha = 6*std::pow(tau, 5.0) - 15*std::pow(tau, 4.0) + 10*std::pow(tau, 3.0);
+    alpha = alpha <= 0 ? 0 : alpha;
+    alpha = alpha >= 1 ? 1 : alpha;
+    
+    Logger::info() << "alpha = " << alpha << Logger::endl();
+    
+    current = alpha*goal + (1-alpha)*start;
+    
+    Logger::info() << "Current ref : " << current.transpose() << Logger::endl();
 }
 
 

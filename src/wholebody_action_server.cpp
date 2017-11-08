@@ -25,7 +25,8 @@ int main(int argc, char **argv){
         desc.add_options()
             ("visual,V","Visual mode does not send references to the robot. \
                          An internal robot state publisher provides TF for visualization in rviz")
-            ("config,C", po::value<std::string>(), "Path to config file")
+            ("config,C", po::value<std::string>(), "Path to config file.")
+            ("verbose", "Verbose mode.")
         ;
 
         
@@ -41,7 +42,19 @@ int main(int argc, char **argv){
             path_to_cfg = fs::absolute(vm["config"].as<std::string>()).string();
         }
         else{
-            std::cout << desc << std::endl;
+            if(XBot::Utils::getXBotConfig() == ""){
+                std::cout << desc << std::endl;
+            }
+            else{
+                path_to_cfg = XBot::Utils::getXBotConfig();
+            }
+        }
+        
+        if(vm.count("verbose")){
+            XBot::Logger::SetVerbosityLevel(XBot::Logger::Severity::LOW);
+        }
+        else{
+            XBot::Logger::SetVerbosityLevel(XBot::Logger::Severity::HIGH);
         }
         
         if (vm.count("visual")) {
@@ -111,6 +124,8 @@ int main(int argc, char **argv){
         
         loop_rate.sleep();
     }
+    
+    XBot::MatLogger::FlushAll();
     
     
     return 0;
