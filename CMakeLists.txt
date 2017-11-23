@@ -88,7 +88,7 @@ catkin_package(
    CATKIN_DEPENDS robot_state_publisher 
                 roscpp 
                 actionlib_msgs
-   DEPENDS ${Boost_LIBRARIES}
+   DEPENDS
 )
 
 ###########
@@ -146,12 +146,11 @@ install(TARGETS wholebody_action_server wholebody_action_server
 #   PATTERN ".svn" EXCLUDE
 # )
 
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+# Mark other files for installation (e.g. launch and bag files, etc.)
+install(FILES
+  launch/plot_centauro_effort.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##

@@ -1,0 +1,41 @@
+<launch>
+  <node name="effort_flleg_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/xbotcore/centauro/joint_states/effort[0] 
+              /xbotcore/centauro/joint_states/effort[1]
+              /xbotcore/centauro/joint_states/effort[2] 
+              /xbotcore/centauro/joint_states/effort[3]
+              /xbotcore/centauro/joint_states/effort[4] 
+             "/>
+             
+  <node name="effort_frleg_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/xbotcore/centauro/joint_states/effort[6] 
+              /xbotcore/centauro/joint_states/effort[7]
+              /xbotcore/centauro/joint_states/effort[8] 
+              /xbotcore/centauro/joint_states/effort[9]
+              /xbotcore/centauro/joint_states/effort[10] 
+             "/>   
+             
+  <node name="effort_rlleg_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/xbotcore/centauro/joint_states/effort[12] 
+              /xbotcore/centauro/joint_states/effort[13]
+              /xbotcore/centauro/joint_states/effort[14] 
+              /xbotcore/centauro/joint_states/effort[15]
+              /xbotcore/centauro/joint_states/effort[16] 
+             "/>    
+             
+  <node name="effort_rrleg_plot"
+        pkg="rqt_plot"
+        type="rqt_plot"
+        args="/xbotcore/centauro/joint_states/effort[18] 
+              /xbotcore/centauro/joint_states/effort[19]
+              /xbotcore/centauro/joint_states/effort[20] 
+              /xbotcore/centauro/joint_states/effort[21]
+              /xbotcore/centauro/joint_states/effort[22] 
+             "/>                 
+</launch>
