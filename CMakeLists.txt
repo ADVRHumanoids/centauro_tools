@@ -118,6 +118,10 @@ target_link_libraries(wholebody_action_server ${Boost_LIBRARIES}
                                               ${OpenSoT_LIBRARIES} 
                                               ${XBotInterface_LIBRARIES})
 
+add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
+target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES})
+
+
 #############
 ## Install ##
 #############
@@ -134,6 +138,12 @@ target_link_libraries(wholebody_action_server ${Boost_LIBRARIES}
 
 ## Mark executables and/or libraries for installation
 install(TARGETS wholebody_action_server wholebody_action_server
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS simple_wheeled_motion simple_wheeled_motion
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
