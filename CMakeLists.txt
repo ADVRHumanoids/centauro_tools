@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS actionlib_msgs robot_state_publisher tf_
 find_package(OpenSoT REQUIRED)
 find_package(XBotInterface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options filesystem)
-
+find_package(cartesian_interface REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -40,18 +40,6 @@ find_package(Boost REQUIRED COMPONENTS program_options filesystem)
 ##     and list every .msg/.srv/.action file to be processed
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
-
-add_action_files(
-  DIRECTORY action
-  FILES LegMovement.action
-)
-
-generate_messages(
-  DEPENDENCIES
-  std_msgs actionlib_msgs
-)
-
-
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -109,17 +97,23 @@ endif()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${catkin_INCLUDE_DIRS} ${OpenSoT_INCLUDE_DIRS})
+include_directories(include 
+    ${catkin_INCLUDE_DIRS} 
+    ${OpenSoT_INCLUDE_DIRS} 
+    ${cartesian_interface_INCLUDE_DIRS})
 
-add_executable(wholebody_action_server src/wholebody_action_server.cpp)
-add_dependencies(wholebody_action_server roscpp_generate_messages_cpp)
-target_link_libraries(wholebody_action_server ${Boost_LIBRARIES} 
-                                              ${catkin_LIBRARIES} 
-                                              ${OpenSoT_LIBRARIES} 
-                                              ${XBotInterface_LIBRARIES})
+# add_executable(wholebody_action_server src/wholebody_action_server.cpp)
+# add_dependencies(wholebody_action_server roscpp_generate_messages_cpp)
+# target_link_libraries(wholebody_action_server ${Boost_LIBRARIES} 
+#                                               ${catkin_LIBRARIES} 
+#                                               ${OpenSoT_LIBRARIES} 
+#                                               ${XBotInterface_LIBRARIES})
 
 add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
 target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES})
+
+add_library(CartesianWheeledMotion src/SimpleWheeledMotion.cpp)
+target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES})
 
 
 #############
@@ -137,13 +131,19 @@ target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES})
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS wholebody_action_server wholebody_action_server
+# install(TARGETS wholebody_action_server wholebody_action_server
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+
+install(TARGETS simple_wheeled_motion simple_wheeled_motion
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(TARGETS simple_wheeled_motion simple_wheeled_motion
+install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -157,10 +157,10 @@ install(TARGETS simple_wheeled_motion simple_wheeled_motion
 # )
 
 # Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
-  launch/plot_centauro_effort.launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+# install(FILES
+#   launch/plot_centauro_effort.launch
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 
 #############
 ## Testing ##
