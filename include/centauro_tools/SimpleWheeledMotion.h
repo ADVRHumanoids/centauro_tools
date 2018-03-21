@@ -44,63 +44,24 @@ namespace XBot { namespace Cartesian {
         
     };
     
-const std::string& CustomRelativeCartesian::getDistalLink() const
-{
-    return _distal;
-}
-
-
-void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
-{
-    _ref = ref;
-}
-
-
-CustomRelativeCartesian::CustomRelativeCartesian(const ModelInterface& robot, string distal_link, string base_link): 
-    Task< Eigen::MatrixXd, Eigen::VectorXd >("CUSTOM_REL_" + distal_link, robot.getJointNum()),
-    _robot(robot),
-    _base(base_link),
-    _distal(distal_link)
-{
+    class HysteresisComparator
+    {
+      
+    public:
+        
+        HysteresisComparator(double th_lo = -1., 
+                             double th_hi =  1., 
+                             bool init_lo = true);
+        
+        bool compare(double value);
+        
+    private:
+        
+        const double _th_lo, _th_hi;
+        double _th_curr;
+        
+    };
     
-    Eigen::Vector3d distal_pos, base_pos;
-    
-    _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
-    _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
-    
-    _ref = distal_pos - base_pos;
-    
-    _update(Eigen::VectorXd());
-    _W.setIdentity(3,3);
-}
-
-Eigen::Vector3d CustomRelativeCartesian::getError() const
-{
-    return _error;
-}
-
-
-
-void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
-{
-    Eigen::Vector3d distal_pos, base_pos;
-    Eigen::Matrix3d w_R_base;
-    
-    _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
-    _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
-    _robot.getOrientation(_base, w_R_base);
-    
-    _robot.getJacobian(_base, _Jbase);
-    _robot.getJacobian(_distal, _Jdistal);
-    
-    _A = _Jdistal.topRows(3);
-    _A -= (_Jbase.topRows(3) -   Utils::skewSymmetricMatrix(distal_pos - base_pos).col(2)*_Jbase.bottomRows(1));
-    
-    
-    _error = w_R_base*_ref - (distal_pos - base_pos);
-    _b = _lambda * (_error);
-   
-}
 
     
     class SimpleSteering 
@@ -115,12 +76,14 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
         
         double computeSteeringAngle(const Eigen::Vector3d& waist_vel, const Eigen::Vector3d& wheel_vel);
         double getDofIndex() const;
+        void log(XBot::MatLogger::Ptr logger);
         
     private:
         
         static double wrap_angle(double q);
         static double sign(double x);
         
+        HysteresisComparator _comp;
         int _steering_id;
         Eigen::Vector3d _world_steering_axis, _wheel_spinning_axis;
         ModelInterface::ConstPtr _model;
@@ -128,6 +91,8 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
         std::string _wheel_name;
         std::string _waist_name;
         Eigen::VectorXd _q;
+        
+        Eigen::Vector3d _vdes;
         
         
     };

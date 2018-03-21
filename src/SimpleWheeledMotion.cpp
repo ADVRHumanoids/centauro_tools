@@ -83,6 +83,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                                  pp_link,
                                                                  "world"
                                                                 );
+        pp_cartesian->setLambda(0.1);
         auto pp_or = pp_cartesian % or_xy_idx;
 
         _wheel_cart_rel.push_back(wheel_cartesian_rel);
@@ -196,7 +197,7 @@ bool WheeledMotionImpl::update(double time, double period)
 
             cart_task->setLambda(0.0);
         }
-
+        
         if(!getPoseReference(cart_task->getDistalLink(), T_ref, &v_ref, &a_ref))
         {
             continue;
@@ -220,12 +221,15 @@ bool WheeledMotionImpl::update(double time, double period)
     }
     
     /* Steering */
-    Eigen::Vector3d waist_vref = _waist_cart->getError().head<3>();
+    Eigen::Vector3d waist_vref;
+    waist_vref << _waist_cart->getError().head<2>(), _waist_cart->getError()(5);
     Eigen::Vector3d wheel_vref(0, 0, 0);
     _logger->add("waist_vref", waist_vref);
     for(int i = 0; i < NUM_WHEELS; i++)
     {
         auto& steering = _steering[i];
+        
+        steering.log(_logger);
         
         wheel_vref = _wheel_cart_rel[i]->getError().head<3>();
         _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref, wheel_vref);
@@ -233,8 +237,6 @@ bool WheeledMotionImpl::update(double time, double period)
         
         _logger->add("wheel_vref_"+std::to_string(i+1), wheel_vref);
         _logger->add("steering_angle_"+std::to_string(i+1), _qpostural(steering.getDofIndex()));
-        
-        std::cout << _qpostural(steering.getDofIndex()) << std::endl;
     }
 
     _dq /= period;
@@ -274,7 +276,8 @@ WheeledMotionImpl::~WheeledMotionImpl()
 SimpleSteering::SimpleSteering(XBot::ModelInterface::ConstPtr model, 
                                std::string wheel_name):
     _model(model),
-    _wheel_name(wheel_name)
+    _wheel_name(wheel_name),
+    _comp(0.0015, 0.002)
 {
     auto spinning_axis = _model->getUrdf().getLink(wheel_name)->parent_joint->axis;
     _wheel_spinning_axis << spinning_axis.x, spinning_axis.y, spinning_axis.z;
@@ -331,15 +334,15 @@ double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel,
     
     /* Desired angle */
     Eigen::Vector3d r = w_T_wheel.translation() - w_T_waist.translation();
-    Eigen::Vector3d vdes = wheel_vel + waist_vel + waist_vel.z()*Eigen::Vector3d::UnitZ().cross(r);
+    _vdes = wheel_vel + waist_vel + waist_vel.z()*Eigen::Vector3d::UnitZ().cross(r);
     
-    if( vdes.head(2).norm() < 0.001 ) // TBD compare with histeresys
+    if( !_comp.compare(_vdes.head(2).norm()) ) 
     {
-        vdes << 1.0, 0.0, 0.0;
+        _vdes << 1.0, 0.0, 0.0;
+        _vdes = w_T_waist.linear() * _vdes;
     }
     
-    std::cout << "ves: " << vdes.transpose() << std::endl;
-    double des_theta_1 = std::atan2(vdes.y(), vdes.x());
+    double des_theta_1 = std::atan2(_vdes.y(), _vdes.x());
     
     double des_q_1 = q  + (des_theta_1 - theta)*_world_steering_axis.z();
     des_q_1 = wrap_angle(des_q_1);
@@ -369,8 +372,89 @@ double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel,
     
 }
 
+void SimpleSteering::log(MatLogger::Ptr logger)
+{
+    logger->add("vdes_"+_wheel_name, _vdes);
+}
 
 
 
+const std::string& CustomRelativeCartesian::getDistalLink() const
+{
+    return _distal;
+}
+
+
+void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
+{
+    _ref = ref;
+}
+
+
+CustomRelativeCartesian::CustomRelativeCartesian(const ModelInterface& robot, string distal_link, string base_link): 
+    Task< Eigen::MatrixXd, Eigen::VectorXd >("CUSTOM_REL_" + distal_link, robot.getJointNum()),
+    _robot(robot),
+    _base(base_link),
+    _distal(distal_link)
+{
+    
+    Eigen::Vector3d distal_pos, base_pos;
+    
+    _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
+    _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
+    
+    _ref = distal_pos - base_pos;
+    
+    _update(Eigen::VectorXd());
+    _W.setIdentity(3,3);
+}
+
+Eigen::Vector3d CustomRelativeCartesian::getError() const
+{
+    return _error;
+}
+
+
+
+void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
+{
+    Eigen::Vector3d distal_pos, base_pos;
+    Eigen::Matrix3d w_R_base;
+    
+    _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
+    _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
+    _robot.getOrientation(_base, w_R_base);
+    
+    _robot.getJacobian(_base, _Jbase);
+    _robot.getJacobian(_distal, _Jdistal);
+    
+    _Jbase.bottomRows(3).topRows(2) = Eigen::MatrixXd::Zero(2, _robot.getJointNum());
+    
+    _A = _Jdistal.topRows(3);
+    _A -= (_Jbase.topRows(3) -   Utils::skewSymmetricMatrix(distal_pos - base_pos)*_Jbase.bottomRows(3));
+    
+    
+    _error = w_R_base*_ref - (distal_pos - base_pos);
+    _b = _lambda * (_error);
+   
+}
+
+HysteresisComparator::HysteresisComparator(double th_lo, double th_hi, bool init_lo):
+     _th_lo(th_lo),
+     _th_hi(th_hi),
+     _th_curr(init_lo ? th_lo : th_hi)
+{
+    if(_th_hi < _th_lo)
+    {
+        throw std::invalid_argument("upper threshold < lower threshold");
+    }
+}
+
+bool HysteresisComparator::compare(double value)
+{
+    bool ret = value > _th_curr;
+    _th_curr = ret ? _th_lo : _th_hi;
+    return ret;
+}
 
 } }
