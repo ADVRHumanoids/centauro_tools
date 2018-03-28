@@ -425,6 +425,8 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
     _robot.getOrientation(_base, w_R_base);
     
+    double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
+    Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     _robot.getJacobian(_base, _Jbase);
     _robot.getJacobian(_distal, _Jdistal);
     
@@ -432,6 +434,9 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     
     _A = _Jdistal.topRows(3);
     _A -= (_Jbase.topRows(3) -   Utils::skewSymmetricMatrix(distal_pos - base_pos)*_Jbase.bottomRows(3));
+    
+    
+    _error = w_R_horz*_ref - (distal_pos - base_pos);
     
     
     _error = w_R_base*_ref - (distal_pos - base_pos);
