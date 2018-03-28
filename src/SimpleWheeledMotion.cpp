@@ -222,7 +222,9 @@ bool WheeledMotionImpl::update(double time, double period)
     
     /* Steering */
     Eigen::Vector3d waist_vref;
-    waist_vref << _waist_cart->getError().head<2>(), _waist_cart->getError()(5);
+    Eigen::Vector6d waist_twist;
+    waist_twist = _waist_cart->getA()*_dq;
+    waist_vref << waist_twist.head<2>(), waist_twist(5);
     Eigen::Vector3d wheel_vref(0, 0, 0);
     _logger->add("waist_vref", waist_vref);
     for(int i = 0; i < NUM_WHEELS; i++)
