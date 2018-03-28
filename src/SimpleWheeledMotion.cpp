@@ -38,6 +38,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto pos_idx_z = OpenSoT::Indices::range(2,2);
     auto or_idx = OpenSoT::Indices::range(3,5);
     auto or_xy_idx = OpenSoT::Indices::range(3,4);
+    auto zor_idx = OpenSoT::Indices::range(2,5);
 
 
 
@@ -110,6 +111,24 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                 );
      _waist_cart->setLambda(0.05);
      _cartesian_tasks.push_back(_waist_cart);
+     
+     _waist_rot = boost::make_shared<CartesianTask>("WAIST_CART_ROT",
+                                                    _q,
+                                                    *_model,
+                                                    "torso_2",
+                                                    "world"
+                                                ) % zor_idx;
+     _waist_rot->setLambda(0.05);
+     
+     
+     auto left_arm_task = boost::make_shared<CartesianTask>("LEFT_ARM",
+                                                    _q,
+                                                    *_model,
+                                                    "arm1_7",
+                                                    "world"
+                                                );
+     left_arm_task->setLambda(0.1);
+     _cartesian_tasks.push_back(left_arm_task);
 
     _postural = boost::make_shared<OpenSoT::tasks::velocity::Postural>(_q);
     _postural->setLambda(0.05);
@@ -124,7 +143,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
     _autostack = ( 
-                    ( pp_or_xy_aggr + _waist_cart + wheel_z_aggr ) / 
+                    ( pp_or_xy_aggr + _waist_cart + left_arm_task + _waist_rot + wheel_z_aggr ) / 
                     ( rolling_aggr + wheel_pos_aggr + 0.0001 * _postural ) 
                  ) << velocity_lims << joint_lims;
                  
@@ -261,6 +280,7 @@ std::string WheeledMotionImpl::get_parent(std::string link)
 std::vector< std::pair< std::string, std::string > > WheeledMotionImpl::__generate_tasks()
 {
     std::vector< std::pair< std::string, std::string > > tasks;
+    tasks.emplace_back("world", "arm1_7");
     tasks.emplace_back("world", "pelvis");
     tasks.emplace_back("world", "wheel_1");
     tasks.emplace_back("world", "wheel_2");

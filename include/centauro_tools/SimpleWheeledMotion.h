@@ -126,6 +126,7 @@ namespace XBot { namespace Cartesian {
         Eigen::VectorXd _q, _dq, _ddq, _qpostural;
 
         CartesianTask::Ptr _waist_cart;
+        SubTask::Ptr _waist_rot;
         std::vector<CartesianTask::Ptr> _cartesian_tasks;
         std::vector<CartesianTask::Ptr> _pp_cart, _wheel_cart;
         std::vector<CustomRelativeCartesian::Ptr> _wheel_cart_rel;
