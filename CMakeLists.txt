@@ -110,10 +110,10 @@ include_directories(include
 #                                               ${XBotInterface_LIBRARIES})
 
 add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
-target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES})
+target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES} yaml-cpp ${catkin_LIBRARIES})
 
 add_library(CartesianWheeledMotion src/SimpleWheeledMotion.cpp)
-target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES})
+target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES} yaml-cpp)
 
 
 #############
