@@ -27,17 +27,30 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     
     std::vector<std::string> steering_joints = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
     std::vector<bool> disable_steering(_model->getJointNum(), true);
+    
     for(auto j : steering_joints)
     {
         disable_steering[ _model->getDofIndex(j) ] = false;
 
     }
+    
+    std::vector<bool> spinning_only(_model->getJointNum(), false);
+    spinning_only[0] = true;
+    spinning_only[1] = true;
+    spinning_only[2] = true;
+    spinning_only[5] = true;
+    setActiveJoints(_model, "j_wheel_1", spinning_only);
+    setActiveJoints(_model, "j_wheel_2", spinning_only);
+    setActiveJoints(_model, "j_wheel_3", spinning_only);
+    setActiveJoints(_model, "j_wheel_4", spinning_only);
 
     auto pos_idx = OpenSoT::Indices::range(0,2);
     auto pos_idx_xy = OpenSoT::Indices::range(0,1);
     auto pos_idx_z = OpenSoT::Indices::range(2,2);
     auto or_idx = OpenSoT::Indices::range(3,5);
     auto or_xy_idx = OpenSoT::Indices::range(3,4);
+    auto pos_rotz_idx = pos_idx.asList();
+    pos_rotz_idx.push_back(5);
 
 
 
@@ -74,6 +87,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
         auto wheel_pos_z = wheel_cartesian % pos_idx_z;
 
         auto wheel_rolling =  boost::make_shared<RollingTask>(_model->leg(i).getTipLinkName(), RADIUS, *_model);
+        wheel_rolling->setActiveJointsMask(spinning_only);
 
         std::string pp_link = get_parent(get_parent(wheel_name));
 
@@ -124,7 +138,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
     _autostack = ( 
-                    ( pp_or_xy_aggr + _waist_cart + wheel_z_aggr ) / 
+                    ( pp_or_xy_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
                     ( rolling_aggr + wheel_pos_aggr + 0.0001 * _postural ) 
                  ) << velocity_lims << joint_lims;
                  
@@ -260,10 +274,10 @@ std::vector< std::pair< std::string, std::string > > WheeledMotionImpl::__genera
 {
     std::vector< std::pair< std::string, std::string > > tasks;
     tasks.emplace_back("world", "pelvis");
-    tasks.emplace_back("world", "wheel_1");
-    tasks.emplace_back("world", "wheel_2");
-    tasks.emplace_back("world", "wheel_3");
-    tasks.emplace_back("world", "wheel_4");
+    tasks.emplace_back("pelvis", "wheel_1");
+    tasks.emplace_back("pelvis", "wheel_2");
+    tasks.emplace_back("pelvis", "wheel_3");
+    tasks.emplace_back("pelvis", "wheel_4");
 
     return tasks;
 }
@@ -403,7 +417,13 @@ CustomRelativeCartesian::CustomRelativeCartesian(const ModelInterface& robot, st
     _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
     _robot.getPointPosition(_distal, Eigen::Vector3d::Zero(), distal_pos);
     
-    _ref = distal_pos - base_pos;
+    Eigen::Matrix3d w_R_base;
+    _robot.getOrientation(_base, w_R_base);
+    
+    double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
+    Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+    
+    _ref = w_R_horz.transpose()*(distal_pos - base_pos);
     
     _update(Eigen::VectorXd());
     _W.setIdentity(3,3);
@@ -437,9 +457,7 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     
     
     _error = w_R_horz*_ref - (distal_pos - base_pos);
-    
-    
-    _error = w_R_base*_ref - (distal_pos - base_pos);
+
     _b = _lambda * (_error);
    
 }

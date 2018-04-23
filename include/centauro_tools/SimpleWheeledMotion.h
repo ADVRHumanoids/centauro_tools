@@ -13,6 +13,12 @@
 namespace XBot { namespace Cartesian {
     
     
+    void setActiveJoints(ModelInterface::ConstPtr model, std::string jname, std::vector<bool>& mask)
+    {
+        mask.at(model->getDofIndex(jname)) = true;
+    }
+    
+    
     class CustomRelativeCartesian : public OpenSoT::Task<Eigen::MatrixXd, Eigen::VectorXd>
     {
         
