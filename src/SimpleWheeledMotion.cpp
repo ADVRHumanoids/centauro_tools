@@ -87,7 +87,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
         auto wheel_pos_z = wheel_cartesian % pos_idx_z;
 
         auto wheel_rolling =  boost::make_shared<RollingTask>(_model->leg(i).getTipLinkName(), RADIUS, *_model);
-        wheel_rolling->setActiveJointsMask(spinning_only);
+//         wheel_rolling->setActiveJointsMask(spinning_only);
 
         std::string pp_link = get_parent(get_parent(wheel_name));
 
