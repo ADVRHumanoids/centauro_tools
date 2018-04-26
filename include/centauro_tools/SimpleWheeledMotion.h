@@ -40,6 +40,8 @@ namespace XBot { namespace Cartesian {
       
         virtual void _update(const Eigen::VectorXd& x);
         
+        virtual void _log(MatLogger::Ptr logger);
+        
         Eigen::MatrixXd _Jbase, _Jdistal;
         const ModelInterface& _robot;
         std::string _base, _distal;
@@ -113,6 +115,10 @@ namespace XBot { namespace Cartesian {
         WheeledMotionImpl(ModelInterface::Ptr model);
 
         virtual bool update(double time, double period);
+        
+        virtual bool setBaseLink(const std::string& ee_name, const std::string& new_base_link);
+        
+        virtual bool setControlMode(const std::string& ee_name, ControlType ctrl_type);
         
         virtual ~WheeledMotionImpl();
 

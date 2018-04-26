@@ -52,7 +52,23 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto pos_rotz_idx = pos_idx.asList();
     pos_rotz_idx.push_back(5);
 
+    std::vector<CartesianTask::TaskPtr> ee_tasks;
 
+    for(int i = 0; i < _model->arms(); i++)
+    {
+        std::string ee_name = "arm" + std::to_string(i+1) + "_8";
+        
+        auto ee_cart = boost::make_shared<CartesianTask>("ARM_CART_" + std::to_string(i),
+                                                         _q,
+                                                         *_model,
+                                                         ee_name,
+                                                         "pelvis"
+                                                        );
+        
+        ee_cart->setLambda(0.1);
+        _cartesian_tasks.push_back(ee_cart);
+        ee_tasks.push_back(ee_cart);
+    }
 
     for(int i = 0; i < NUM_WHEELS; i++)
     {
@@ -115,6 +131,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto wheel_pos_aggr = _wheel_pos_xy[0] + _wheel_pos_xy[1] + _wheel_pos_xy[2] + _wheel_pos_xy[3];
     auto rolling_aggr = _rolling[0] + _rolling[1] + _rolling[2] + _rolling[3];
     auto wheel_z_aggr = _wheel_pos_z[0] + _wheel_pos_z[1] + _wheel_pos_z[2] + _wheel_pos_z[3];
+    auto ee_aggr = ee_tasks[0] + ee_tasks[1];
 
     _waist_cart = boost::make_shared<CartesianTask>("WAIST_CART",
                                                     _q,
@@ -139,8 +156,8 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
 
     _autostack = ( 
                     ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + 0.0001 * _postural ) 
-                 ) << velocity_lims << joint_lims;
+                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
+                  ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
 
@@ -159,6 +176,65 @@ double SimpleSteering::sign(double x)
 }
 
 
+bool WheeledMotionImpl::setBaseLink(const std::string& ee_name, const std::string& new_base_link)
+{
+    if(!XBot::Cartesian::CartesianInterfaceImpl::setBaseLink(ee_name, new_base_link))
+    {
+        return false;
+    }
+    
+    bool success = false;
+    
+    for(auto t : _cartesian_tasks)
+    {
+        if(t->getDistalLink() == ee_name)
+        {
+            success = t->setBaseLink(new_base_link);
+        }
+    }
+    
+    return success;
+    
+}
+
+bool WheeledMotionImpl::setControlMode(const std::string& ee_name, CartesianInterface::ControlType ctrl_type)
+{
+    if(!XBot::Cartesian::CartesianInterfaceImpl::setControlMode(ee_name, ctrl_type))
+    {
+        return false;
+    }
+    
+    bool success = false;
+    
+    for(auto t : _cartesian_tasks)
+    {
+        if(t->getDistalLink() == ee_name)
+        {
+            switch(ctrl_type)
+            {
+                case ControlType::Disabled:
+                    t->setActive(false);
+                    break;
+                    
+                case ControlType::Velocity:
+                    t->setLambda(0.0);
+                    break;
+                    
+                case ControlType::Position:
+                    t->setLambda(0.1);
+                    break;
+                
+            }
+            
+            success = true;
+        }
+    }
+    
+    return success;
+}
+
+
+
 bool WheeledMotionImpl::update(double time, double period)
 {
     bool success = true;
@@ -172,18 +248,6 @@ bool WheeledMotionImpl::update(double time, double period)
     {
         Eigen::Affine3d T_ref;
         Eigen::Vector6d v_ref, a_ref;
-
-        if(getControlMode(cart_task->getDistalLink()) == ControlType::Disabled)
-        {
-            cart_task->setActive(false);
-            continue;
-        }
-
-        if(getControlMode(cart_task->getDistalLink()) == ControlType::Velocity)
-        {
-
-            cart_task->setLambda(0.0);
-        }
 
         if(!getPoseReference(cart_task->getDistalLink(), T_ref, &v_ref, &a_ref))
         {
@@ -200,18 +264,6 @@ bool WheeledMotionImpl::update(double time, double period)
         Eigen::Affine3d T_ref;
         Eigen::Vector6d v_ref, a_ref;
 
-        if(getControlMode(cart_task->getDistalLink()) == ControlType::Disabled)
-        {
-            cart_task->setActive(false);
-            continue;
-        }
-
-        if(getControlMode(cart_task->getDistalLink()) == ControlType::Velocity)
-        {
-
-            cart_task->setLambda(0.0);
-        }
-        
         if(!getPoseReference(cart_task->getDistalLink(), T_ref, &v_ref, &a_ref))
         {
             continue;
@@ -279,6 +331,8 @@ std::vector< std::pair< std::string, std::string > > WheeledMotionImpl::__genera
     tasks.emplace_back("pelvis", "wheel_2");
     tasks.emplace_back("pelvis", "wheel_3");
     tasks.emplace_back("pelvis", "wheel_4");
+    tasks.emplace_back("pelvis", "arm1_8");
+    tasks.emplace_back("pelvis", "arm2_8");
 
     return tasks;
 }
@@ -462,6 +516,13 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     _b = _lambda * (_error);
    
 }
+
+void CustomRelativeCartesian::_log(MatLogger::Ptr logger)
+{
+    logger->add(_task_id + "_error", _error);
+}
+
+
 
 HysteresisComparator::HysteresisComparator(double th_lo, double th_hi, bool init_lo):
      _th_lo(th_lo),
