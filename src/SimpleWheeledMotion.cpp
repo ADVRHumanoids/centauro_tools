@@ -138,8 +138,8 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
     _autostack = ( 
-                    ( pp_or_xy_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
-                    ( rolling_aggr + wheel_pos_aggr + 0.0001 * _postural ) 
+                    ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
+                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + 0.0001 * _postural ) 
                  ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
@@ -239,6 +239,7 @@ bool WheeledMotionImpl::update(double time, double period)
     waist_vref << _waist_cart->getError().head<2>(), _waist_cart->getError()(5);
     Eigen::Vector3d wheel_vref(0, 0, 0);
     _logger->add("waist_vref", waist_vref);
+
     for(int i = 0; i < NUM_WHEELS; i++)
     {
         auto& steering = _steering[i];
