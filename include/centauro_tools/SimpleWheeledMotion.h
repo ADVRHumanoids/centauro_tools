@@ -62,6 +62,7 @@ namespace XBot { namespace Cartesian {
                              bool init_lo = true);
         
         bool compare(double value);
+        double getCurrentThreshold() const;
         
     private:
         

@@ -298,9 +298,15 @@ bool WheeledMotionImpl::update(double time, double period)
         
         steering.log(_logger);
         
+        Eigen::Vector6d wheel_vel;
+        _model->getVelocityTwist("ankle1_" + std::to_string(i+1), wheel_vel);
+        _logger->add("wheel_" + std::to_string(i+1) + "_vel", wheel_vel);
+        
         wheel_vref = _wheel_cart_rel[i]->getError().head<3>();
-        _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref, wheel_vref);
+        _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref*0, wheel_vel.head<3>());
         _dq(steering.getDofIndex()) = 0.1*(_qpostural(steering.getDofIndex()) - _q(steering.getDofIndex()));
+        
+        
         
         _logger->add("wheel_vref_"+std::to_string(i+1), wheel_vref);
         _logger->add("steering_angle_"+std::to_string(i+1), _qpostural(steering.getDofIndex()));
@@ -444,6 +450,7 @@ double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel,
 void SimpleSteering::log(MatLogger::Ptr logger)
 {
     logger->add("vdes_"+_wheel_name, _vdes);
+    logger->add("threshold_"+_wheel_name, _comp.getCurrentThreshold());
 }
 
 
@@ -541,5 +548,11 @@ bool HysteresisComparator::compare(double value)
     _th_curr = ret ? _th_lo : _th_hi;
     return ret;
 }
+
+double HysteresisComparator::getCurrentThreshold() const
+{
+    return _th_curr;
+}
+
 
 } }
