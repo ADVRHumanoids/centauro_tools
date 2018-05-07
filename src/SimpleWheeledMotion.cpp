@@ -168,6 +168,12 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                          1e-4,
                                                          OpenSoT::solvers::solver_back_ends::OSQP
                                                         );
+    
+    /* Fill lambda map */
+    for(auto t : _cartesian_tasks)
+    {
+        _lambda_map[t->getDistalLink()] = t->getLambda();
+    }
 }
 
 double SimpleSteering::sign(double x)
@@ -204,33 +210,56 @@ bool WheeledMotionImpl::setControlMode(const std::string& ee_name, CartesianInte
         return false;
     }
     
-    bool success = false;
+    OpenSoT::tasks::Aggregated::TaskPtr task_ptr;
     
-    for(auto t : _cartesian_tasks)
+    if(ee_name == "com")
+    {
+        XBot::Logger::error("Com task undefined\n");
+        return false;
+    }
+    
+    for(const auto t : _cartesian_tasks)
     {
         if(t->getDistalLink() == ee_name)
         {
-            switch(ctrl_type)
-            {
-                case ControlType::Disabled:
-                    t->setActive(false);
-                    break;
-                    
-                case ControlType::Velocity:
-                    t->setLambda(0.0);
-                    break;
-                    
-                case ControlType::Position:
-                    t->setLambda(0.1);
-                    break;
-                
-            }
-            
-            success = true;
+            task_ptr = t;
         }
     }
     
-    return success;
+    if(task_ptr)
+    {
+        
+        switch(ctrl_type)
+        {
+            case ControlType::Disabled:
+                task_ptr->setActive(false);
+                break;
+                
+            case ControlType::Velocity:
+                task_ptr->setActive(true);
+                _lambda_map[ee_name] = task_ptr->getLambda();
+                task_ptr->setLambda(0.0);
+                break;
+                
+            case ControlType::Position:
+                if( _lambda_map.find(ee_name) == _lambda_map.end() )
+                {
+                    XBot::Logger::error("No lambda value for task %s defined, contact the developers\n", ee_name.c_str());
+                    return false;
+                }
+                task_ptr->setActive(true);
+                task_ptr->setLambda(_lambda_map.at(ee_name));
+                break;
+                
+            default:
+                break;
+            
+        }
+        
+        return true;
+    }
+    
+    return false;
 }
 
 
@@ -254,8 +283,7 @@ bool WheeledMotionImpl::update(double time, double period)
             continue;
         }
 
-        cart_task->setActive(true);
-        cart_task->setReference(T_ref.matrix(), v_ref);
+        cart_task->setReference(T_ref.matrix(), v_ref*period);
 
     }
     
@@ -269,12 +297,9 @@ bool WheeledMotionImpl::update(double time, double period)
             continue;
         }
 
-        cart_task->setActive(true);
         cart_task->setReference(T_ref.translation());
     }
     
-    
-
     
     _autostack->update(_q);
     _autostack->log(_logger);
@@ -498,10 +523,20 @@ CustomRelativeCartesian::CustomRelativeCartesian(const XBot::ModelInterface& rob
     Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     
     _ref = w_R_horz.transpose()*(distal_pos - base_pos);
-    
+
     _update(Eigen::VectorXd());
     _W.setIdentity(3,3);
 }
+
+Eigen::Matrix3d CustomRelativeCartesian::getHorzFrameRotation() const
+{
+    Eigen::Matrix3d w_R_base;
+    _robot.getOrientation(_base, w_R_base);
+    
+    double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
+    return Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+}
+
 
 Eigen::Vector3d CustomRelativeCartesian::getError() const
 {
@@ -528,7 +563,6 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     
     _A = _Jdistal.topRows(3);
     _A -= (_Jbase.topRows(3) -   Utils::skewSymmetricMatrix(distal_pos - base_pos)*_Jbase.bottomRows(3));
-    
     
     _error = w_R_horz*_ref - (distal_pos - base_pos);
 
