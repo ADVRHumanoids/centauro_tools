@@ -463,11 +463,23 @@ const std::string& CustomRelativeCartesian::getDistalLink() const
 
 void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
 {
-    _ref = ref;
+    Eigen::Affine3d w_T_base;
+    _robot.getPose(_base, w_T_base);
+    Eigen::Matrix3d w_R_base = w_T_base.linear();
+    
+    
+    Eigen::Vector3d w_ref = w_T_base * ref;
+    
+    double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
+    Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+    
+    _ref = w_R_horz.transpose() * (w_ref - w_T_base.translation());
 }
 
 
-CustomRelativeCartesian::CustomRelativeCartesian(const ModelInterface& robot, string distal_link, string base_link): 
+CustomRelativeCartesian::CustomRelativeCartesian(const XBot::ModelInterface& robot, 
+                                                 std::string distal_link, 
+                                                 std::string base_link): 
     Task< Eigen::MatrixXd, Eigen::VectorXd >("CUSTOM_REL_" + distal_link, robot.getJointNum()),
     _robot(robot),
     _base(base_link),
