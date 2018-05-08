@@ -5,6 +5,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
+#include <cartesian_interface/SetTaskInfo.h>
 
 using XBot::Logger;
 
@@ -13,6 +14,11 @@ const double RADIUS = 0.075;
 
 void joy_callback(const sensor_msgs::Joy::ConstPtr& joy, 
                   Eigen::Vector3d& ref_twist);
+int state = 0;
+
+std::map<int,ros::Publisher> topic_map;
+bool mode[4];
+int start = 0;
 
 int main(int argc, char ** argv)
 {
@@ -20,8 +26,18 @@ int main(int argc, char ** argv)
     ros::init(argc, argv, "demo_joy_control");
     ros::NodeHandle nh;
     
-    ros::Publisher pub = nh.advertise<geometry_msgs::TwistStamped>("/xbotcore/cartesian/pelvis/velocity_reference", 1);
+    //ros::Publisher pub = nh.advertise<geometry_msgs::TwistStamped>("/xbotcore/cartesian/pelvis/velocity_reference", 1);
+    topic_map[0] = nh.advertise<geometry_msgs::TwistStamped>("/xbotcore/cartesian/pelvis/velocity_reference", 1);
+    topic_map[1] = nh.advertise<geometry_msgs::TwistStamped>("/xbotcore/cartesian/arm1_8/velocity_reference", 1);
+    topic_map[2] = nh.advertise<geometry_msgs::TwistStamped>("/xbotcore/cartesian/arm2_8/velocity_reference", 1);
     
+
+    ros::ServiceClient client1 = nh.serviceClient<cartesian_interface::SetTaskInfo>("/xbotcore/cartesian/pelvis/set_task_properties");
+    ros::ServiceClient client2 = nh.serviceClient<cartesian_interface::SetTaskInfo>("/xbotcore/cartesian/arm1_8/set_task_properties");
+    ros::ServiceClient client3 = nh.serviceClient<cartesian_interface::SetTaskInfo>("/xbotcore/cartesian/arm2_8/set_task_properties");
+    cartesian_interface::SetTaskInfo srv;
+    
+   
     /* Joystick communication */
     Eigen::Vector3d ref_twist;
     ref_twist.setZero();
@@ -47,6 +63,16 @@ int main(int argc, char ** argv)
     {
         ros::spinOnce();
         
+        if (start ==1){
+            
+            srv.request.base_link = "world";
+            srv.request.control_mode = "Velocity";
+            client1.call(srv);
+            srv.request.base_link = "pelvis";
+            client2.call(srv);
+            client3.call(srv);
+            
+        }
         
         tf::StampedTransform transform;
         Eigen::Affine3d T;
@@ -66,8 +92,18 @@ int main(int argc, char ** argv)
        msg.twist.linear.y = ref_xy_twist[1];
        msg.twist.linear.z = ref_twist[2];
        msg.twist.angular.z = ref_twist[5];
-       pub.publish(msg);
-        
+       
+       if( state == 0){           
+           topic_map[0].publish(msg);
+        }else if(state == 1){
+           topic_map[1].publish(msg);
+        }else if(state == 2){
+           topic_map[2].publish(msg);
+        }else if(state == 3){
+           topic_map[1].publish(msg);
+           topic_map[2].publish(msg);
+        }
+       
         
         }
         catch (tf::TransformException ex){
@@ -100,8 +136,23 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twis
     
     ref_twist[5] = thetadot_max * msg->axes[yaw];
     
+    int ba = msg->buttons[0];
+    int bb = msg->buttons[1];
+    int bx = msg->buttons[3];
+    int by = msg->buttons[4];
+    start = msg->buttons[11];
+            
+    if (by == 1) state = 0;
+    if (bx ==1) state = 1;
+    if (bb ==1) state = 2;
+    if (ba ==1) state = 3;
+    
     int val = msg->buttons[7];
+    if (state == 0){
     if (val == 0) ref_twist[2]=0.0; else ref_twist[2] = zv_max * msg->axes[z];
+    }else{
+        ref_twist[2] = zv_max * msg->axes[z];
+    }
     
     std::cout<<"x: "<<ref_twist[0] << " y: "<<ref_twist[1]<<" z: "<<ref_twist[2]<<" yaw: "<<ref_twist[5]<<std::endl;
     
