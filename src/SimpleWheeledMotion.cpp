@@ -320,12 +320,13 @@ bool WheeledMotionImpl::update(double time, double period)
     for(int i = 0; i < NUM_WHEELS; i++)
     {
         auto& steering = _steering[i];
+        std::string ankle_name = get_parent(get_parent(steering.getWheelName()));
         
         steering.log(_logger);
         
         Eigen::Vector6d wheel_vel;
-        _model->getVelocityTwist("ankle1_" + std::to_string(i+1), wheel_vel);
-        _logger->add("wheel_" + std::to_string(i+1) + "_vel", wheel_vel);
+        _model->getVelocityTwist(ankle_name, wheel_vel);
+        _logger->add(steering.getWheelName() + "_vel", wheel_vel);
         
         wheel_vref = _wheel_cart_rel[i]->getError().head<3>();
         _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref*0, wheel_vel.head<3>());

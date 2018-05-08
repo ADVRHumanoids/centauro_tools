@@ -87,6 +87,7 @@ namespace XBot { namespace Cartesian {
         
         double computeSteeringAngle(const Eigen::Vector3d& waist_vel, const Eigen::Vector3d& wheel_vel);
         double getDofIndex() const;
+        const std::string& getWheelName() const { return _wheel_name; }
         void log(XBot::MatLogger::Ptr logger);
         
     private:
