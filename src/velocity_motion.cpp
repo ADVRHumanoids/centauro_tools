@@ -86,13 +86,18 @@ int main(int argc, char ** argv)
         
         Eigen::Vector2d ref_xy_twist;
         ref_xy_twist << ref_twist[0], ref_twist[1];
-        ref_xy_twist = (T.inverse()).matrix().block(0,0,2,2)*ref_xy_twist;
+        if( state == 0){ 
+            ref_xy_twist = (T.inverse()).matrix().block(0,0,2,2)*ref_xy_twist;
+        }
         
        msg.twist.linear.x = ref_xy_twist[0];
        msg.twist.linear.y = ref_xy_twist[1];
        msg.twist.linear.z = ref_twist[2];
+
+       msg.twist.angular.x = ref_twist[3];
+       msg.twist.angular.y = ref_twist[4];
        msg.twist.angular.z = ref_twist[5];
-       
+      
        if( state == 0){           
            topic_map[0].publish(msg);
         }else if(state == 1){
@@ -128,13 +133,15 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twis
     int x = 1;
     int y = 0;
     int z = 7;
-    int yaw = 2;
+    int yaw_pelvis = 2;
+    int pitch = 3;
+    int roll = 2;
 
     ref_twist[0] = v_max * msg->axes[x];
     ref_twist[1] = v_max * msg->axes[y];
     
     
-    ref_twist[5] = thetadot_max * msg->axes[yaw];
+   
     
     int ba = msg->buttons[0];
     int bb = msg->buttons[1];
@@ -150,9 +157,17 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twis
     int val = msg->buttons[7];
     if (state == 0){
     if (val == 0) ref_twist[2]=0.0; else ref_twist[2] = zv_max * msg->axes[z];
+        ref_twist[3] = 0.0;
+        ref_twist[4] = 0.0;
+        ref_twist[5] = thetadot_max * msg->axes[yaw_pelvis];
     }else{
         ref_twist[2] = zv_max * msg->axes[z];
+        ref_twist[3] = thetadot_max * msg->axes[pitch];
+        ref_twist[4] = thetadot_max * msg->axes[roll];
+        ref_twist[5] = 0.0;
     }
+    
+    
     
     std::cout<<"x: "<<ref_twist[0] << " y: "<<ref_twist[1]<<" z: "<<ref_twist[2]<<" yaw: "<<ref_twist[5]<<std::endl;
     
