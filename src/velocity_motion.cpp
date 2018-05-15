@@ -126,9 +126,9 @@ int main(int argc, char ** argv)
 
 void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twist)
 {
-    double v_max = 0.15;
-    double zv_max = 0.05;
-    double thetadot_max = 0.2;
+    double v_max = 0.35;//0.15;
+    double zv_max = 0.2;//0.05;
+    double thetadot_max = 0.8;//0.2;
     
     int x = 1;
     int y = 0;
@@ -136,11 +136,8 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twis
     int yaw_pelvis = 2;
     int pitch = 3;
     int roll = 2;
+    int yaw = 6;
 
-    ref_twist[0] = v_max * msg->axes[x];
-    ref_twist[1] = v_max * msg->axes[y];
-    
-    
    
     
     int ba = msg->buttons[0];
@@ -157,14 +154,24 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg, Eigen::Vector3d& ref_twis
     int val = msg->buttons[7];
     if (state == 0){
     if (val == 0) ref_twist[2]=0.0; else ref_twist[2] = zv_max * msg->axes[z];
+        v_max = 0.35;
+        zv_max = 0.2;
+        thetadot_max = 0.8;
         ref_twist[3] = 0.0;
         ref_twist[4] = 0.0;
         ref_twist[5] = thetadot_max * msg->axes[yaw_pelvis];
+        ref_twist[0] = v_max * msg->axes[x];
+        ref_twist[1] = v_max * msg->axes[y];
     }else{
+        v_max = 0.15;
+        zv_max = 0.05;
+        thetadot_max = 0.2;
         ref_twist[2] = zv_max * msg->axes[z];
-        ref_twist[3] = thetadot_max * msg->axes[pitch];
-        ref_twist[4] = thetadot_max * msg->axes[roll];
-        ref_twist[5] = 0.0;
+        ref_twist[3] = thetadot_max * msg->axes[roll];
+        ref_twist[4] = thetadot_max * msg->axes[pitch];
+        ref_twist[5] = thetadot_max * msg->axes[yaw];
+        ref_twist[0] = v_max * msg->axes[x];
+        ref_twist[1] = v_max * msg->axes[y];
     }
     
     
