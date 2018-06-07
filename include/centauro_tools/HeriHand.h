@@ -22,7 +22,9 @@
 #define __CENTAURO_TOOLS_HERI_HAND_H__
 
 #include <XCM/XBotControlPlugin.h>
-#include <centauro_tools/heri_hand_control.h>
+
+#include <centauro_tools/HeriHandControl.h>
+#include <centauro_tools/HeriHandState.h>
 
 #include <atomic>
 
@@ -44,7 +46,10 @@ public:
 private:
 
     double _start_time;
+    int seq = 0;
     Eigen::VectorXd _q0, _q;
+    
+    int _heri_esc_id_1, _heri_esc_id_2;
     
     XBot::RobotInterface::Ptr _robot;
     XBot::MatLogger::Ptr _logger;
@@ -55,8 +60,13 @@ private:
     std::atomic<int> _primitive;
     std::atomic<double> _percentage;
     
-    void callback(const centauro_tools::heri_hand_controlConstPtr& msg);
-
+    XBot::RosUtils::PublisherWrapper::Ptr _pub_rt;
+    centauro_tools::HeriHandState state;
+    
+    void callback(const centauro_tools::HeriHandControlConstPtr& msg);
+    
+    bool getHeriHandIds( const srdf_advr::Model& srdfdom );
+ 
 };
 
 }

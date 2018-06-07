@@ -84,7 +84,25 @@ include_directories(include)
 add_message_files(
 DIRECTORY msgs
 FILES
-heri_hand_control.msg
+HeriHandControl.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandState.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandFinger.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandFingerAnalogs.msg
 )
     
 generate_messages(

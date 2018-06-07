@@ -1,0 +1,3 @@
+float64 analog_1
+float64 analog_2
+float64 analog_3
