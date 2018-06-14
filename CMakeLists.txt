@@ -166,10 +166,10 @@ install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
 # )
 
 # Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   launch/plot_centauro_effort.launch
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+  launch/joy_ci.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 
 #############
 ## Testing ##
