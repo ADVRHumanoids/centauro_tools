@@ -112,6 +112,9 @@ include_directories(include
 add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
 target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
+add_executable(unicycle_tracking src/UnicycleTracking.cpp)
+target_link_libraries(unicycle_tracking ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
+
 add_library(CartesianWheeledMotion src/SimpleWheeledMotion.cpp)
 target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES} yaml-cpp)
 
@@ -138,6 +141,12 @@ target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${
 # )
 
 install(TARGETS simple_wheeled_motion simple_wheeled_motion
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS unicycle_tracking unicycle_tracking
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
