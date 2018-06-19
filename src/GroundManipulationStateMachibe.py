@@ -80,8 +80,8 @@ class Down(smach.State):
         # CALL ACTION TO GO DOWN AND WAIT FOR RESULT
         (l_pose, r_pose) = poses.get_down_open_lr()
 
-        robot.lhand_go_to(l_pose, 12.0)
-        robot.rhand_go_to(r_pose, 12.0)
+        robot.lhand_go_to(l_pose, 16.0)
+        robot.rhand_go_to(r_pose, 16.0)
         robot.lhand_wait_for_result()
         robot.rhand_wait_for_result()
         

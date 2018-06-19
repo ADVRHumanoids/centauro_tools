@@ -1,0 +1,34 @@
+<launch>
+
+<param name="joy_node/dev" value="/dev/input/js0" />
+  <node name="joy_node"
+        pkg="joy"
+        type="joy_node"
+	output="screen"/>
+
+<arg name="prefix" default=""/>
+<param name="problem_description" textfile="$(find cartesian_interface)/examples/configs/centauro_simple_stack.yaml"/>
+
+<node pkg="cartesian_interface" type="ros_server_node" 
+                                name="ros_server_node" 
+                                required="true" 
+                                output="screen" 
+                                launch-prefix="$(arg prefix)">
+                                
+    <remap from="robot_description" to="xbotcore/centauro/robot_description"/>
+    <remap from="robot_description_semantic" to="xbotcore/centauro/robot_description_semantic"/>
+    <remap from="robot_description_joint_id_map" to="xbotcore/centauro/robot_description_joint_id_map"/>
+    <param name="is_model_floating_base" type="bool" value="true"/>
+    <param name="model_type" value="RBDL"/>
+    <param name="solver" value="WheeledMotion"/>
+    <param name="world_frame" value="l_sole"/>
+    
+</node>
+       
+<node name="velocity_motion"
+        pkg="centauro_tools"
+        type="velocity_motion"
+	output="screen"/>
+
+                       
+</launch>

@@ -115,6 +115,9 @@ target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES} ${catkin_
 add_executable(unicycle_tracking src/UnicycleTracking.cpp)
 target_link_libraries(unicycle_tracking ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
+add_executable(velocity_motion src/velocity_motion.cpp)
+target_link_libraries(velocity_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
+
 add_library(CartesianWheeledMotion src/SimpleWheeledMotion.cpp)
 target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES} yaml-cpp)
 
@@ -152,6 +155,12 @@ install(TARGETS unicycle_tracking unicycle_tracking
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+install(TARGETS velocity_motion velocity_motion
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -166,10 +175,10 @@ install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
 # )
 
 # Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   launch/plot_centauro_effort.launch
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+  launch/joy_ci.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 
 #############
 ## Testing ##

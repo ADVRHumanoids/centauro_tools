@@ -23,6 +23,14 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     _model->getJointPosition(_q);
     _qpostural = _q;
     _ddq = _dq = _q*0;
+    
+    std::vector<string> joints_out;
+    Eigen::VectorXd _q_motor;
+    _model->getMotorPosition(_q_motor);
+    _model->checkJointLimits(_q, joints_out );
+    for( const auto& j : joints_out ) {
+        XBot::Logger::error() << j << " -> motor position is outside of range " << XBot::Logger::endl();
+    }
 
     
     std::vector<std::string> steering_joints = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
