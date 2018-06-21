@@ -95,7 +95,8 @@ def create_plugin_control(master,plugin_name, row_num, status_label):
     
 def cartesian_interface():
     # start the cartesian_interface server in the background
-    subprocess.Popen(["roslaunch", "cartesian_interface", "cartesian_server.launch", "use_xbot_config:=true"])
+    my_env = os.environ.copy()
+    subprocess.Popen(["roslaunch", "cartesian_interface", "cartesian_server.launch", "use_xbot_config:=true"], env=my_env)
 
 def load_controller(controller):
     rospy.wait_for_service('/xbotcore/cartesian/load_controller', timeout=1.0)
@@ -103,6 +104,13 @@ def load_controller(controller):
         ci_load = rospy.ServiceProxy('/xbotcore/cartesian/load_controller', LoadController)
         res = ci_load(controller)
         print res.message
+        
+        # restart markers and joypads TBD do it properly
+        subprocess.Popen(["killall", "-9", "marker_spawner"])
+        subprocess.Popen(["rosrun", "cartesian_interface", "marker_spawner"])
+        subprocess.Popen(["killall", "-9", "joystick_spawner"])
+        subprocess.Popen(["rosrun", "cartesian_interface", "joystick_spawner"])
+        
         return res.success
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
