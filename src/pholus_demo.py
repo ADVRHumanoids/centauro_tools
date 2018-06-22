@@ -5,8 +5,10 @@ import rospy
 from std_srvs.srv import SetBool
 from XBotCore.srv import status_service
 from cartesian_interface.srv import LoadController
+from centauro_tools.msg import HeriHandControl
     
 from mttkinter import mtTkinter as tk
+import ttk
 import time
 from threading import Thread
 import random
@@ -119,6 +121,13 @@ def load_controller(controller):
 def xbot():
      subprocess.Popen(["XBotCore", "-DV"])
 
+def heri_control(primitive, percentage):
+    print primitive
+    print percentage.get()
+    pub = rospy.Publisher('/heri_hand_control', HeriHandControl, queue_size=10)
+    #pub.publish(std_msgs.msg.String("foo"))
+    
+
 
 class GuiPart:
     def __init__(self, master, queue, endCommand):
@@ -141,7 +150,28 @@ class GuiPart:
         r += 1
         create_plugin_control(master,'HeriHand', r, self.status_label)
         
-        # 
+        # HeriHand control
+        percentage = tk.StringVar(root, value='0.0')
+        #percentage.trace("w", lambda name, index, mode, percentage=percentage: callback(percentage))
+
+        r += 1
+        
+        tk.Button(master, text="Grasp", font='Calibri 12', command=lambda: heri_control("Grasp", percentage)).grid(row=r, column=1, pady=20)
+        tk.Button(master, text="Pinch", font='Calibri 12', command=lambda: heri_control("Pinch", percentage)).grid(row=r, column=2)
+        tk.Button(master, text="Tool Grasp", font='Calibri 12', command=lambda: heri_control("Tool Grasp", percentage)).grid(row=r, column=3)
+        tk.Button(master, text="Tool Trigger", font='Calibri 12', command=lambda: heri_control("Tool Trigger", percentage)).grid(row=r, column=4)
+        
+        r += 1
+        
+        tk.Label(master, text="Closure (0.0 to 1.0)",  font='Calibri 12',).grid(row=r, column=1, sticky=tk.W, padx=20, pady=20)
+
+        e1 = tk.Entry(master, textvariable=percentage)
+        e1.grid(row=r, column=2)
+
+        #e1 = Entry(master)
+        #e2 = Entry(master)
+        
+        #  CI
         b = tk.Button(master, text='Cartesian Interface', font='Helvetica 12 bold', command=lambda: cartesian_interface())
         r += 1
         b.grid(row=r, column=0, rowspan=2, pady=20)
@@ -230,9 +260,15 @@ class ThreadedClient:
         os.killpg(0, signal.SIGINT)
 
 
+# root view
 root = tk.Tk()
+
+root.style = ttk.Style()
+#('clam', 'alt', 'default', 'classic')
+root.style.theme_use("clam")
+
 root.title('PHOLUS demo')
-root.minsize(720,480)
+root.minsize(1080,720)
 root.geometry("720x480")
 
 client = ThreadedClient(root)
