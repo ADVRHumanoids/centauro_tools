@@ -122,10 +122,12 @@ def xbot():
      subprocess.Popen(["XBotCore", "-DV"])
 
 def heri_control(primitive, percentage):
-    print primitive
-    print percentage.get()
     pub = rospy.Publisher('/heri_hand_control', HeriHandControl, queue_size=10)
-    #pub.publish(std_msgs.msg.String("foo"))
+    heri_ctrl = HeriHandControl()
+    heri_ctrl.primitive = primitive
+    heri_ctrl.percentage = float(percentage.get())
+    print heri_ctrl
+    pub.publish(heri_ctrl)
     
 
 
@@ -156,10 +158,10 @@ class GuiPart:
 
         r += 1
         
-        tk.Button(master, text="Grasp", font='Calibri 12', command=lambda: heri_control("Grasp", percentage)).grid(row=r, column=1, pady=20)
-        tk.Button(master, text="Pinch", font='Calibri 12', command=lambda: heri_control("Pinch", percentage)).grid(row=r, column=2)
-        tk.Button(master, text="Tool Grasp", font='Calibri 12', command=lambda: heri_control("Tool Grasp", percentage)).grid(row=r, column=3)
-        tk.Button(master, text="Tool Trigger", font='Calibri 12', command=lambda: heri_control("Tool Trigger", percentage)).grid(row=r, column=4)
+        tk.Button(master, text="Grasp", font='Calibri 12', command=lambda: heri_control("grasp", percentage)).grid(row=r, column=1, pady=20)
+        tk.Button(master, text="Pinch", font='Calibri 12', command=lambda: heri_control("pinch", percentage)).grid(row=r, column=2)
+        tk.Button(master, text="Tool Grasp", font='Calibri 12', command=lambda: heri_control("tool_grasp", percentage)).grid(row=r, column=3)
+        tk.Button(master, text="Tool Trigger", font='Calibri 12', command=lambda: heri_control("tool_trigger", percentage)).grid(row=r, column=4)
         
         r += 1
         
@@ -270,6 +272,8 @@ root.style.theme_use("clam")
 root.title('PHOLUS demo')
 root.minsize(1080,720)
 root.geometry("720x480")
+
+rospy.init_node('PHOLUS_demo', anonymous=True)
 
 client = ThreadedClient(root)
 root.mainloop()    
