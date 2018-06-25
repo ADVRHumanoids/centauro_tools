@@ -41,6 +41,37 @@ find_package(cartesian_interface REQUIRED)
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandControl.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandState.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandFinger.msg
+)
+
+add_message_files(
+DIRECTORY msgs
+FILES
+HeriHandFingerAnalogs.msg
+)
+    
+generate_messages(
+DEPENDENCIES
+std_msgs
+)
+
+
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -108,6 +139,7 @@ include_directories(include
 #                                               ${catkin_LIBRARIES} 
 #                                               ${OpenSoT_LIBRARIES} 
 #                                               ${XBotInterface_LIBRARIES})
+
 
 add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
 target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
