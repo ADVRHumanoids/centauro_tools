@@ -1,5 +1,4 @@
 #include <ros/ros.h>
-#include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <eigen_conversions/eigen_msg.h>
@@ -12,7 +11,7 @@ Eigen::Vector2d state_xy(.0, .0);
 double state_theta = .0;
 bool state_received = false;
 
-void ref_callback(const geometry_msgs::Pose2DConstPtr& msg);
+void ref_callback(const geometry_msgs::PoseStampedConstPtr& msg);
 void state_callback(const geometry_msgs::PoseStampedConstPtr& msg);
 
 int main(int argc, char **argv)
@@ -28,13 +27,17 @@ int main(int argc, char **argv)
     double b = nhpriv.param("ref_point_distance", 1.0);
     double Kfb = nhpriv.param("gain", 1.0);
     double filter_cutoff = nhpriv.param("filter_cutoff", 2.0);
+    double u_max = nhpriv.param("u_max", 1.0);
     ros::Rate loop_rate(100);
+    double dt = loop_rate.expectedCycleTime().toSec();
     
     while(!state_received)
     {
         ros::spinOnce();
         loop_rate.sleep();
     }
+    
+    state_sub.shutdown();
     
     double ctheta = std::cos(state_theta);
     double stheta = std::sin(state_theta);
@@ -47,21 +50,24 @@ int main(int argc, char **argv)
     filt.setTimeStep(loop_rate.expectedCycleTime().toSec());
     filt.reset(ref);
     
+    Eigen::Vector2d ref_limited = ref;
+    
     while(ros::ok())
     {
         ros::spinOnce();
         
+        ref_limited = ref_limited.array() + ((ref - ref_limited)/dt).array().max(-0.3).min(0.3)*dt;
         
         double ctheta = std::cos(state_theta);
         double stheta = std::sin(state_theta);
         Eigen::Vector2d i_vec(ctheta, stheta);
         Eigen::Vector2d y = state_xy + b*i_vec;
-        Eigen::Vector2d u = Kfb*(filt.process(ref) - y);
+        Eigen::Vector2d u = Kfb*(filt.process(ref_limited) - y);
         
         double theta_dot = Eigen::Vector2d(-stheta, ctheta).dot(u)/b;
         
         Eigen::Matrix2d Tinv;
-        Tinv <<  ctheta,   stheta, 
+        Tinv <<    ctheta,   stheta,
                 -stheta/b, ctheta/b;
         
         double v_des = (Tinv.topRows(1)*u).value();
@@ -73,10 +79,14 @@ int main(int argc, char **argv)
         msg.twist.linear.y = v_des * stheta;
         msg.twist.angular.z = thetadot_des;
         
+        state_xy += i_vec*v_des*dt;
+        state_theta += thetadot_des*dt;
+        
         ref_pub.publish(msg);
         
         logger->add("state_xy", state_xy);
         logger->add("ref", ref);
+        logger->add("ref_limited", ref_limited);
         logger->add("ref_filt", filt.getOutput());
         logger->add("v_des", v_des);
         logger->add("thetadot_des", thetadot_des);
@@ -88,9 +98,9 @@ int main(int argc, char **argv)
     logger->flush();
 }
 
-void ref_callback(const geometry_msgs::Pose2DConstPtr& msg)
+void ref_callback(const geometry_msgs::PoseStampedConstPtr& msg)
 {
-    ref << msg->x, msg->y;
+    ref << msg->pose.position.x, msg->pose.position.y;
 }
 
 void state_callback(const geometry_msgs::PoseStampedConstPtr& msg)
