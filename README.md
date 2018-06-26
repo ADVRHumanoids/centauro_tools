@@ -17,8 +17,13 @@ From the `IDLE` state, the user can send three commands:
  - `up_stretch` 
  - `down_mid`
  - `down_low`
+
 in order to change Centauro's support polygon and shape.
 For **tuning such motions**, refer to the `TerrainAdaptationPoses.py` script.
 In general, all motions are achieved by sending suitable goal messages to the CartesianInterface 
 *ROS action server*; so, they can be easily incorporated in external python/c++ pieces of code (have 
 a look at the code!)
+
+**NOTE** to change the homing configuration, go to the current *SRDF file* and modify the *home* group state.
+The "spider-like" homing can usually be found right after the mammal one (commented out).
+Remember to apply the change both on the robot embedded pc AND on the control pc.
