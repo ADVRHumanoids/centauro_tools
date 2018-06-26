@@ -1,15 +1,24 @@
 # centauro_tools
 This package provides tools for the control of the centauro robot!
 
-## LegMovementAction Server
-A ROS node implementing a server for a LegMovementAction. The easiest way of
-building this package is to use the advr-superbuild build system, which will
-take care of downloading and installing all required dependencies.
-Before running the node, make sure that the NRT domain is able to control the robot
-by turning on the XBotCommunicationPlugin.
+## SimpleWheeledMotion
+*CartesianInterface* implementation for the wheeled motion of the Centauro robot.
+It supports:
+ - control of waist frame X/Y/Z/rotZ through wheeled motion
+ - control of wheels position X/Y w.r.t. waist frame
+ - control of hands w.r.t. waist frame
 
-```
-rosservice call /XBotCommunicationPlugin_switch 1
-```
-
-Then run the module as `rosrun centauro_tools wholebody_action_server --config path_to_config_file`
+## TerrainAdatpationPoses
+Python script that sends references to the CartesianInterface *SimpleWheeledMotion* plugin 
+in order to simultaneously change the support polygon shape as well as the waist height.
+Due to Centauro's hip yaw joint limitations, it works best from a *spider-like* homing. 
+The script `TerrainAdaptationStateMachine.py` consists of a basic *smach* state machine. 
+From the `IDLE` state, the user can send three commands:
+ - `up_stretch` 
+ - `down_mid`
+ - `down_low`
+in order to change Centauro's support polygon and shape.
+For **tuning such motions**, refer to the `TerrainAdaptationPoses.py` script.
+In general, all motions are achieved by sending suitable goal messages to the CartesianInterface 
+*ROS action server*; so, they can be easily incorporated in external python/c++ pieces of code (have 
+a look at the code!)
