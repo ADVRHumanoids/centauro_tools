@@ -38,8 +38,8 @@ class CentauroControl:
         self.clients['hr_wheel'] = self.hr_wheel_client
         
         self.link_names = {}
-        self.link_names['l_hand'] = 'LWrMot3'
-        self.link_names['r_hand'] = 'RWrMot3'
+        self.link_names['l_hand'] = 'arm1_8'
+        self.link_names['r_hand'] = 'arm2_8'
         self.link_names['waist'] = 'pelvis'
         self.link_names['fl_wheel'] = 'wheel_1'
         self.link_names['fr_wheel'] = 'wheel_2'

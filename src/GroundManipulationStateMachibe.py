@@ -69,19 +69,14 @@ class Down(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state DOWN')
         
-        delta_pose = geomsg.Pose()
-        delta_pose.position.x = 0.3
+        robot.set_task_active('r_hand', False)
         
-        robot.lhand_go_to(delta_pose, 2.0, incremental = True)
-        robot.rhand_go_to(delta_pose, 2.0, incremental = True)
-        robot.lhand_wait_for_result()
-        robot.rhand_wait_for_result()
         
         # CALL ACTION TO GO DOWN AND WAIT FOR RESULT
         (l_pose, r_pose) = poses.get_down_open_lr()
 
-        robot.lhand_go_to(l_pose, 16.0)
-        robot.rhand_go_to(r_pose, 16.0)
+        robot.lhand_go_to(l_pose, 3.0)
+        robot.rhand_go_to(r_pose, 3.0)
         robot.lhand_wait_for_result()
         robot.rhand_wait_for_result()
         
@@ -129,10 +124,12 @@ class Up(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state UP')
         
+        robot.set_task_active('r_hand', True)
+        
         # CALL ACTION TO GO UP
         (l_pose, r_pose) = poses.get_up_close_lr()
-        robot.lhand_go_to(l_pose, 6.0)
-        robot.rhand_go_to(r_pose, 6.0)
+        robot.lhand_go_to(l_pose, 3.0)
+        robot.rhand_go_to(r_pose, 3.0)
         robot.lhand_wait_for_result()
         robot.rhand_wait_for_result()
         
