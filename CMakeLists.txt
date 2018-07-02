@@ -1,21 +1,38 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(centauro_tools)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS actionlib_msgs robot_state_publisher tf_conversions roscpp std_msgs sensor_msgs std_srvs geometry_msgs message_generation eigen_conversions)
+# Add cmake dir and include custom macros
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(MacroYCMInstallLibrary)
 
-## System dependencies are found with CMake's conventions
+find_package(catkin REQUIRED COMPONENTS actionlib_msgs 
+                                        robot_state_publisher 
+                                        tf_conversions 
+                                        roscpp 
+                                        std_msgs 
+                                        sensor_msgs 
+                                        std_srvs 
+                                        geometry_msgs 
+                                        message_generation 
+                                        eigen_conversions
+                                        )
+
 find_package(OpenSoT REQUIRED)
+find_package(XCM REQUIRED)
 find_package(XBotInterface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options filesystem)
 find_package(cartesian_interface REQUIRED)
 
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+
+# # add_action_files(
+# #   DIRECTORY action
+# #   FILES LegMovement.action
+# # )
+# # 
+# # generate_messages(
+# #   DEPENDENCIES
+# #   std_msgs actionlib_msgs
+# # )
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -126,14 +143,17 @@ else()
     message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
+set(ENABLE_XENO CACHE BOOL "ON")
+if ( ${ENABLE_XENO} )
+   find_package(Xenomai)
+endif()
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(include 
     ${catkin_INCLUDE_DIRS} 
     ${OpenSoT_INCLUDE_DIRS} 
     ${cartesian_interface_INCLUDE_DIRS})
-
-
 
 add_executable(simple_wheeled_motion src/simple_wheeled_motion.cpp)
 target_link_libraries(simple_wheeled_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
@@ -150,33 +170,18 @@ target_link_libraries(velocity_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRAR
 add_library(CartesianWheeledMotion src/SimpleWheeledMotion.cpp)
 target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES} yaml-cpp)
 
+add_library(HeriHand SHARED src/HeriHand.cpp)
+target_link_libraries(HeriHand ${XCM_LIBRARIES})
+ycm_library_install(HeriHand 1 0 0)
 
 #############
 ## Install ##
 #############
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables and/or libraries for installation
-# install(TARGETS wholebody_action_server wholebody_action_server
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-install(TARGETS simple_wheeled_motion simple_wheeled_motion
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+if ( Xenomai_FOUND )
+    set_xeno_flags(HeriHand)
+endif()
 
 install(TARGETS unicycle_tracking unicycle_tracking
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
