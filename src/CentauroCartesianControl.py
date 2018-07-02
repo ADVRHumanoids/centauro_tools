@@ -19,11 +19,15 @@ class CentauroControl:
     def __init__(self):
         self.l_hand_client = actionlib.SimpleActionClient('/xbotcore/cartesian/arm1_8/reach', cimsg.ReachPoseAction)
         self.r_hand_client = actionlib.SimpleActionClient('/xbotcore/cartesian/arm2_8/reach', cimsg.ReachPoseAction)
+        
         self.torso_client = actionlib.SimpleActionClient('/xbotcore/cartesian/pelvis/reach', cimsg.ReachPoseAction)
+        
         self.fl_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_1/reach', cimsg.ReachPoseAction)
         self.fr_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_2/reach', cimsg.ReachPoseAction)
         self.hl_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_3/reach', cimsg.ReachPoseAction)
         self.hr_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_4/reach', cimsg.ReachPoseAction)
+        
+
         
         
         
@@ -36,6 +40,10 @@ class CentauroControl:
         self.clients['fr_wheel'] = self.fr_wheel_client
         self.clients['hl_wheel'] = self.hl_wheel_client
         self.clients['hr_wheel'] = self.hr_wheel_client
+        self.clients['fl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_1/reach', cimsg.ReachPoseAction)
+        self.clients['fr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_2/reach', cimsg.ReachPoseAction)
+        self.clients['hl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_3/reach', cimsg.ReachPoseAction)
+        self.clients['hr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_4/reach', cimsg.ReachPoseAction)
         
         self.link_names = {}
         self.link_names['l_hand'] = 'LWrMot3'
