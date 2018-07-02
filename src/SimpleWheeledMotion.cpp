@@ -111,7 +111,6 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
         auto wheel_pos_z = wheel_cartesian % pos_idx_z;
 
         auto wheel_rolling =  boost::make_shared<RollingTask>(_model->leg(i).getTipLinkName(), RADIUS, *_model);
-//         wheel_rolling->setActiveJointsMask(spinning_only);
 
         std::string pp_link = get_parent(get_parent(wheel_name));
 
@@ -123,6 +122,15 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                                 );
         pp_cartesian->setLambda(0.1);
         auto pp_or = pp_cartesian % or_xy_idx;
+        
+        auto p_cartesian =  boost::make_shared<CartesianTask>("P_CART_" + std::to_string(i),
+                                                               _q,
+                                                              *_model,
+                                                               get_parent(wheel_name),
+                                                               "world"
+                                                               );
+        
+        p_cartesian->setLambda(0.1);
 
         _wheel_cart_rel.push_back(wheel_cartesian_rel);
         _wheel_cart.push_back(wheel_cartesian);
@@ -130,6 +138,8 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
         _wheel_pos_z.push_back(wheel_pos_z);
         _rolling.push_back(wheel_rolling);
         _pp_cart.push_back(pp_cartesian);
+        _p_cart.push_back(p_cartesian);
+        _cartesian_tasks.push_back(p_cartesian);
         _pp_or.push_back(pp_or);
 //         _cartesian_tasks.push_back(wheel_cartesian);
 
@@ -140,6 +150,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto rolling_aggr = _rolling[0] + _rolling[1] + _rolling[2] + _rolling[3];
     auto wheel_z_aggr = _wheel_pos_z[0] + _wheel_pos_z[1] + _wheel_pos_z[2] + _wheel_pos_z[3];
     auto ee_aggr = ee_tasks[0] + ee_tasks[1];
+    auto p_pos_z_aggr = _p_cart[0]%pos_idx_z + _p_cart[1]%pos_idx_z + _p_cart[2]%pos_idx_z + _p_cart[3]%pos_idx_z;
 
     _waist_cart = boost::make_shared<CartesianTask>("WAIST_CART",
                                                     _q,
@@ -163,8 +174,8 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
     _autostack = ( 
-                    ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
+                    ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + p_pos_z_aggr ) / 
+                    ( rolling_aggr + pp_or_xy_aggr + _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
                   ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
@@ -288,6 +299,7 @@ bool WheeledMotionImpl::update(double time, double period)
 
         if(!getPoseReference(cart_task->getDistalLink(), T_ref, &v_ref, &a_ref))
         {
+            Logger::warning("WheeledMotion: no reference available for task %s\n", cart_task->getDistalLink().c_str());
             continue;
         }
 
@@ -302,6 +314,7 @@ bool WheeledMotionImpl::update(double time, double period)
 
         if(!getPoseReference(cart_task->getDistalLink(), T_ref, &v_ref, &a_ref))
         {
+            Logger::warning("WheeledMotion: no reference available for task %s\n", cart_task->getDistalLink().c_str());
             continue;
         }
 
@@ -371,6 +384,10 @@ std::vector< std::pair< std::string, std::string > > WheeledMotionImpl::__genera
     tasks.emplace_back("pelvis", "wheel_2");
     tasks.emplace_back("pelvis", "wheel_3");
     tasks.emplace_back("pelvis", "wheel_4");
+    tasks.emplace_back("world", "ankle2_1");
+    tasks.emplace_back("world", "ankle2_2");
+    tasks.emplace_back("world", "ankle2_3");
+    tasks.emplace_back("world", "ankle2_4");
     tasks.emplace_back("pelvis", "arm1_8");
     tasks.emplace_back("pelvis", "arm2_8");
 

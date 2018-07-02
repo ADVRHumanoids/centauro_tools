@@ -146,6 +146,7 @@ namespace XBot { namespace Cartesian {
         std::map<std::string, double> _lambda_map;
         std::vector<CartesianTask::Ptr> _pp_cart, _wheel_cart;
         std::vector<CustomRelativeCartesian::Ptr> _wheel_cart_rel;
+        std::vector<CartesianTask::Ptr> _p_cart;
         std::vector<SubTask::Ptr> _wheel_pos_xy, _pp_or, _wheel_pos_z;
         std::vector<RollingTask::Ptr> _rolling;
         OpenSoT::tasks::velocity::Postural::Ptr _postural;
