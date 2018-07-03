@@ -25,6 +25,15 @@ class Idle(smach.State):
         if user_command == 'lift_fr':
             userdata.wheel_to_lift = 'FR'
             return 'lift_fr'
+        if user_command == 'lift_fl':
+            userdata.wheel_to_lift = 'FL'
+            return 'lift_fr'
+        if user_command == 'lift_rr':
+            userdata.wheel_to_lift = 'RR'
+            return 'lift_fr'
+        if user_command == 'lift_rl':
+            userdata.wheel_to_lift = 'RL'
+            return 'lift_fr'
         if user_command == 'home':
             userdata.wheel_to_lift = ''
             return 'home'
@@ -66,8 +75,15 @@ class ShapePolygon(smach.State):
         print 'Received request to lift foot ', userdata.wheel_to_lift
         # CALL ACTIONS TO SHAPE SUPPORT POLYGON
         if userdata.wheel_to_lift == 'FR':
-            
             (fl, fr, rr, rl) = poses.get_reshape_poly_fr()
+        if userdata.wheel_to_lift == 'FL':
+            (fl, fr, rr, rl) = poses.get_reshape_poly_fl()
+        if userdata.wheel_to_lift == 'RR':
+            (fl, fr, rr, rl) = poses.get_reshape_poly_rr()
+        if userdata.wheel_to_lift == 'RL':
+            (fl, fr, rr, rl) = poses.get_reshape_poly_rl()
+        
+        
 
         robot.go_to('fl_wheel', fl, 6.0)
         robot.go_to('hr_wheel', rr, 6.0)
@@ -98,6 +114,15 @@ class LiftFoot(smach.State):
         if userdata.wheel_to_lift == 'FR':
             robot.go_to('fr_wheel_z', goal, 1.0, True)
             robot.wait_for_result('fr_wheel_z')
+        if userdata.wheel_to_lift == 'FL':
+            robot.go_to('fl_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('fl_wheel_z')
+        if userdata.wheel_to_lift == 'RR':
+            robot.go_to('hr_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('hr_wheel_z')
+        if userdata.wheel_to_lift == 'RL':
+            robot.go_to('hl_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('hl_wheel_z')
 
         raw_input("ENTER TO PLACE FOOT") 
         
@@ -117,6 +142,15 @@ class PlaceFoot(smach.State):
         if userdata.wheel_to_lift == 'FR':
             robot.go_to('fr_wheel_z', goal, 1.0, True)
             robot.wait_for_result('fr_wheel_z')
+        if userdata.wheel_to_lift == 'FL':
+            robot.go_to('fl_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('fl_wheel_z')
+        if userdata.wheel_to_lift == 'RR':
+            robot.go_to('hr_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('hr_wheel_z')
+        if userdata.wheel_to_lift == 'RL':
+            robot.go_to('hl_wheel_z', goal, 1.0, True)
+            robot.wait_for_result('hl_wheel_z')
 
         return 'done'
 
