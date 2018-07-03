@@ -52,10 +52,10 @@ class Home(smach.State):
         # CALL ACTIONS TO SHAPE SUPPORT POLYGON
         (fl, fr, rr, rl) = poses.get_reshape_poly_home()
 
-        robot.go_to('fl_wheel', fl, 6.0)
-        robot.go_to('hr_wheel', rr, 6.0)
-        robot.go_to('fr_wheel', fr, 6.0)
-        robot.go_to('hl_wheel', rl, 6.0)
+        robot.go_to('fl_wheel', fl, 1.0)
+        robot.go_to('hr_wheel', rr, 1.0)
+        robot.go_to('fr_wheel', fr, 1.0)
+        robot.go_to('hl_wheel', rl, 1.0)
 
         robot.wait_for_result('fl_wheel')
         robot.wait_for_result('hr_wheel')
@@ -85,10 +85,10 @@ class ShapePolygon(smach.State):
         
         
 
-        robot.go_to('fl_wheel', fl, 6.0)
-        robot.go_to('hr_wheel', rr, 6.0)
-        robot.go_to('fr_wheel', fr, 6.0)
-        robot.go_to('hl_wheel', rl, 6.0)
+        robot.go_to('fl_wheel', fl, 1.0)
+        robot.go_to('hr_wheel', rr, 1.0)
+        robot.go_to('fr_wheel', fr, 1.0)
+        robot.go_to('hl_wheel', rl, 1.0)
 
         robot.wait_for_result('fl_wheel')
         robot.wait_for_result('hr_wheel')
