@@ -351,7 +351,12 @@ bool WheeledMotionImpl::update(double time, double period)
         
         wheel_vref = _wheel_cart_rel[i]->getError().head<3>();
         _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref*0, wheel_vel.head<3>());
-        _dq(steering.getDofIndex()) = 0.1*(_qpostural(steering.getDofIndex()) - _q(steering.getDofIndex()));
+        
+        const double STEERING_GAIN = 0.1;
+        const double MAX_STEERING_SPEED = 3.0;
+        double dq = STEERING_GAIN*(_qpostural(steering.getDofIndex()) - _q(steering.getDofIndex()));
+        _dq(steering.getDofIndex()) = std::min(std::max(dq, -MAX_STEERING_SPEED), MAX_STEERING_SPEED);
+        
         
         
         
