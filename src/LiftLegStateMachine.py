@@ -4,24 +4,30 @@
 import rospy
 import smach
 import smach_ros
-import CentauroCartesianControl 
+import CentauroCartesianControl
+import CommandListener
 import LiftLegPoses as poses
 import geometry_msgs.msg as geomsg
 
 robot = CentauroCartesianControl.CentauroControl()
-
-
-
 # Initial state
 class Idle(smach.State):
     def __init__(self):
-        smach.State.__init__(self, 
-                             outcomes=['lift_fr', 'home', 'invalid_input'], 
+        smach.State.__init__(self,
+                             outcomes=['lift_fr', 'home', 'invalid_input'],
                              output_keys=['wheel_to_lift'])
 
     def execute(self, userdata):
         rospy.loginfo('Entering IDLE mode')
-        user_command = raw_input("Type next state: ") 
+
+        cmd_listener = CommandListener.CommandListener("LiftLeg")
+
+        user_command = cmd_listener.get_last_command()
+        print "Received " + user_command
+
+        cmd_listener.__del__()
+
+        #user_command = raw_input("Type next state: ")
         if user_command == 'lift_fr':
             userdata.wheel_to_lift = 'FR'
             return 'lift_fr'
@@ -40,10 +46,11 @@ class Idle(smach.State):
         else:
             print "Invalid input..try again"
             return 'invalid_input'
-            
+
+
 class Home(smach.State):
     def __init__(self):
-        smach.State.__init__(self, 
+        smach.State.__init__(self,
                              outcomes=['done'])
 
     def execute(self, userdata):
@@ -52,10 +59,10 @@ class Home(smach.State):
         # CALL ACTIONS TO SHAPE SUPPORT POLYGON
         (fl, fr, rr, rl) = poses.get_reshape_poly_home()
 
-        robot.go_to('fl_wheel', fl, 1.0)
-        robot.go_to('hr_wheel', rr, 1.0)
-        robot.go_to('fr_wheel', fr, 1.0)
-        robot.go_to('hl_wheel', rl, 1.0)
+        robot.go_to('fl_wheel', fl, 0.5)
+        robot.go_to('hr_wheel', rr, 0.5)
+        robot.go_to('fr_wheel', fr, 0.5)
+        robot.go_to('hl_wheel', rl, 0.5)
 
         robot.wait_for_result('fl_wheel')
         robot.wait_for_result('hr_wheel')
@@ -66,8 +73,8 @@ class Home(smach.State):
 
 class ShapePolygon(smach.State):
     def __init__(self):
-        smach.State.__init__(self, 
-                             outcomes=['done'], 
+        smach.State.__init__(self,
+                             outcomes=['done'],
                              input_keys=['wheel_to_lift'])
 
     def execute(self, userdata):
@@ -82,35 +89,34 @@ class ShapePolygon(smach.State):
             (fl, fr, rr, rl) = poses.get_reshape_poly_rr()
         if userdata.wheel_to_lift == 'RL':
             (fl, fr, rr, rl) = poses.get_reshape_poly_rl()
-        
-        
 
-        robot.go_to('fl_wheel', fl, 1.0)
-        robot.go_to('hr_wheel', rr, 1.0)
-        robot.go_to('fr_wheel', fr, 1.0)
-        robot.go_to('hl_wheel', rl, 1.0)
+
+
+        robot.go_to('fl_wheel', fl, 0.5)
+        robot.go_to('hr_wheel', rr, 0.5)
+        robot.go_to('fr_wheel', fr, 0.5)
+        robot.go_to('hl_wheel', rl, 0.5)
 
         robot.wait_for_result('fl_wheel')
         robot.wait_for_result('hr_wheel')
         robot.wait_for_result('fr_wheel')
         robot.wait_for_result('hl_wheel')
-        
-        raw_input("ENTER TO LIFT FOOT") 
 
+        rospy.sleep(0.5)
         return 'done'
 
 class LiftFoot(smach.State):
     def __init__(self):
-        smach.State.__init__(self, 
-                             outcomes=['done'], 
+        smach.State.__init__(self,
+                             outcomes=['done'],
                              input_keys=['wheel_to_lift'])
 
     def execute(self, userdata):
         rospy.loginfo('Executing state LIFT FOOT')
-        
+
         goal = geomsg.Pose()
         goal.position.z = 0.25
-        
+
         if userdata.wheel_to_lift == 'FR':
             robot.go_to('fr_wheel_z', goal, 1.0, True)
             robot.wait_for_result('fr_wheel_z')
@@ -124,10 +130,9 @@ class LiftFoot(smach.State):
             robot.go_to('hl_wheel_z', goal, 1.0, True)
             robot.wait_for_result('hl_wheel_z')
 
-        raw_input("ENTER TO PLACE FOOT") 
-        
+        rospy.sleep(0.5)
         return 'done'
-       
+
 class PlaceFoot(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['done'], input_keys=['wheel_to_lift'])
@@ -135,10 +140,10 @@ class PlaceFoot(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state PLACE FOOT')
         print 'Received request to lift foot ', userdata.wheel_to_lift
-        
+
         goal = geomsg.Pose()
         goal.position.z = -0.25
-        
+
         if userdata.wheel_to_lift == 'FR':
             robot.go_to('fr_wheel_z', goal, 1.0, True)
             robot.wait_for_result('fr_wheel_z')
@@ -160,32 +165,32 @@ def main():
 
     # Create the top level SMACH state machine
     sm_top = smach.StateMachine(outcomes=['outcome5'])
-    
+
     # Open the container
     with sm_top:
 
-        smach.StateMachine.add('IDLE', Idle(), 
+        smach.StateMachine.add('IDLE', Idle(),
                                transitions={'lift_fr':'RESHAPE_POLY',
-                                            'invalid_input':'IDLE', 
+                                            'invalid_input':'IDLE',
                                             'home':'HOME'})
-                                            
+
         smach.StateMachine.add('HOME', Home(),
-                               transitions={'done':'IDLE'})     
+                               transitions={'done':'IDLE'})
 
         smach.StateMachine.add('RESHAPE_POLY', ShapePolygon(),
                                transitions={'done':'LIFT_FOOT'})
-                               
+
         smach.StateMachine.add('LIFT_FOOT', LiftFoot(),
                                transitions={'done':'PLACE_FOOT'})
-                               
+
         smach.StateMachine.add('PLACE_FOOT', PlaceFoot(),
                                transitions={'done':'IDLE'})
-                               
+
 
     # Create and start the introspection server
     sis = smach_ros.IntrospectionServer('server_name', sm_top, '/SM_ROOT')
     sis.start()
-    
+
     # Execute SMACH plan
     outcome = sm_top.execute()
 
