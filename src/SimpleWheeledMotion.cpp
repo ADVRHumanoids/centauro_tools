@@ -354,8 +354,9 @@ bool WheeledMotionImpl::update(double time, double period)
         
         const double STEERING_GAIN = 0.1;
         const double MAX_STEERING_SPEED = 3.0;
+        const double MAX_STEERING_DQ = MAX_STEERING_SPEED*period;
         double dq = STEERING_GAIN*(_qpostural(steering.getDofIndex()) - _q(steering.getDofIndex()));
-        _dq(steering.getDofIndex()) = std::min(std::max(dq, -MAX_STEERING_SPEED), MAX_STEERING_SPEED);
+        _dq(steering.getDofIndex()) = std::min(std::max(dq, -MAX_STEERING_DQ), MAX_STEERING_DQ);
         
         
         
