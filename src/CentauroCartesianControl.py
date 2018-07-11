@@ -13,6 +13,7 @@ import geometry_msgs.msg as geomsg
 import std_srvs.srv as stdsrv
 import XBotCore.msg as xbotmsg
 import geometry_msgs.msg
+import tf
 
 class CentauroControl:
     
@@ -145,6 +146,14 @@ class CentauroControl:
         
     def torso_wait_for_result(self):
         self.wait_for_result('torso')
+        
+    def get_current_pose(self, ee_name):
+        listener = tf.TransformListener()
+        listener.waitForTransform('/ci/world_odom', '/ci/' + self.link_names[ee_name], rospy.Time(), rospy.Duration(4.0))
+        print '/ci/' + self.link_names[ee_name]
+        (trans,rot) = listener.lookupTransform('/ci/world_odom', '/ci/' + self.link_names[ee_name], rospy.Time(0))
+        return trans, rot
+        
            
         
         
