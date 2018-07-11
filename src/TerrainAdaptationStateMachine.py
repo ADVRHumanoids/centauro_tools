@@ -7,6 +7,7 @@ import smach_ros
 import CentauroCartesianControl 
 import TerrainAdaptationPoses as poses
 import geometry_msgs.msg as geomsg
+import tf
 
 robot = CentauroCartesianControl.CentauroControl()
 
@@ -39,6 +40,19 @@ class UpStretch(smach.State):
         
         # CALL ACTION TO GO DOWN AND WAIT FOR RESULT
         (fl, fr, rr, rl, waist) = poses.get_up_stretched_0123wa()
+        
+        try:
+            (wa_trans, wa_rot) = robot.get_current_pose('waist');
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            print 'Unable to lookup TF'
+            return 'done'
+            
+        waist.position.x = wa_trans[0]
+        waist.position.y = wa_trans[1]
+        waist.orientation.x = wa_rot[0]
+        waist.orientation.y = wa_rot[1]
+        waist.orientation.z = wa_rot[2]
+        waist.orientation.w = wa_rot[3]
 
         robot.go_to('waist', waist, 6.0)
         robot.go_to('fl_wheel', fl, 6.0)
@@ -64,6 +78,20 @@ class DownMid(smach.State):
         
         # CALL ACTION TO GO DOWN AND WAIT FOR RESULT
         (fl, fr, rr, rl, waist) = poses.get_down_mid_0123wa()
+        
+        try:
+            (wa_trans, wa_rot) = robot.get_current_pose('waist');
+            print wa_trans, wa_rot
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            print 'Unable to lookup TF'
+            return 'done'
+            
+        waist.position.x = wa_trans[0]
+        waist.position.y = wa_trans[1]
+        waist.orientation.x = wa_rot[0]
+        waist.orientation.y = wa_rot[1]
+        waist.orientation.z = wa_rot[2]
+        waist.orientation.w = wa_rot[3]
 
         robot.go_to('waist', waist, 6.0)
         robot.go_to('fl_wheel', fl, 6.0)
@@ -89,6 +117,19 @@ class DownLow(smach.State):
         
         # CALL ACTION TO GO DOWN AND WAIT FOR RESULT
         (fl, fr, rr, rl, waist) = poses.get_down_low_0123wa()
+        
+        try:
+            (wa_trans, wa_rot) = robot.get_current_pose('waist');
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            print 'Unable to lookup TF'
+            return 'done'
+            
+        waist.position.x = wa_trans[0]
+        waist.position.y = wa_trans[1]
+        waist.orientation.x = wa_rot[0]
+        waist.orientation.y = wa_rot[1]
+        waist.orientation.z = wa_rot[2]
+        waist.orientation.w = wa_rot[3]
 
         robot.go_to('waist', waist, 6.0)
         robot.go_to('fl_wheel', fl, 6.0)

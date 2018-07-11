@@ -10,8 +10,8 @@ import geometry_msgs.msg as geomsg
 def get_up_stretched_0123wa():
 
     fl_pose = geomsg.Pose()
-    fl_pose.position.x = 0.35
-    fl_pose.position.y = 0.35
+    fl_pose.position.x = 0.33 # 0.35
+    fl_pose.position.y = 0.24 # WHEEL LATERAL COORDINATE: 0.35
     fl_pose.position.z = -0.7
     fl_pose.orientation.x = 0.0
     fl_pose.orientation.y = 0.0
@@ -19,8 +19,8 @@ def get_up_stretched_0123wa():
     fl_pose.orientation.w = 1.0
     
     fr_pose = geomsg.Pose()
-    fr_pose.position.x = 0.35
-    fr_pose.position.y = -0.35
+    fr_pose.position.x = 0.33 # 0.35
+    fr_pose.position.y = -0.24 # WHEEL LATERAL COORDINATE: -0.35
     fr_pose.position.z = -0.7
     fr_pose.orientation.x = 0.0
     fr_pose.orientation.y = 0.0
@@ -29,7 +29,7 @@ def get_up_stretched_0123wa():
     
     rr_pose = geomsg.Pose()
     rr_pose.position.x = -0.35
-    rr_pose.position.y = -0.35
+    rr_pose.position.y = -0.24 # WHEEL LATERAL COORDINATE: -0.35
     rr_pose.position.z = -0.7
     rr_pose.orientation.x = 0.0
     rr_pose.orientation.y = 0.0
@@ -38,7 +38,7 @@ def get_up_stretched_0123wa():
     
     rl_pose = geomsg.Pose()
     rl_pose.position.x = -0.35
-    rl_pose.position.y = 0.35
+    rl_pose.position.y = 0.24 # WHEEL LATERAL COORDINATE: 0.35
     rl_pose.position.z = -0.7
     rl_pose.orientation.x = 0.0
     rl_pose.orientation.y = 0.0
@@ -48,7 +48,7 @@ def get_up_stretched_0123wa():
     waist = geomsg.Pose()
     waist.position.x = 0.0
     waist.position.y = 0.0
-    waist.position.z = 0.95
+    waist.position.z = 1.05 # WAIST HEIGHT: 0.95
     waist.orientation.x = 0.0
     waist.orientation.y = 0.0
     waist.orientation.z = 0.0
