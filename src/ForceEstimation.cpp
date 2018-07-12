@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "centauro_force_estimation");
     ros::NodeHandle nh, nh_priv("~");
-    auto xbot_cfg = XBot::ConfigOptionsFromParamServer();
+    auto xbot_cfg = XBot::ConfigOptions::FromConfigFile(XBot::Utils::getXBotConfig());
     
     auto logger = XBot::MatLogger::getLogger("/tmp/centauro_force_estimation_log");
     auto robot = XBot::RobotInterface::getRobot(xbot_cfg);
