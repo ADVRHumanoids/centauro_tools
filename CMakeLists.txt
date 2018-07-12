@@ -15,13 +15,13 @@ find_package(catkin REQUIRED COMPONENTS actionlib_msgs
                                         geometry_msgs 
                                         message_generation 
                                         eigen_conversions
+                                        cartesian_interface
                                         )
 
 find_package(OpenSoT REQUIRED)
 find_package(XCM REQUIRED)
 find_package(XBotInterface REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options filesystem)
-find_package(cartesian_interface REQUIRED)
 
 
 # # add_action_files(
@@ -164,6 +164,9 @@ target_link_libraries(unicycle_tracking ${XBotInterface_LIBRARIES} ${catkin_LIBR
 add_executable(centauro_polygon_publisher src/PolygonPublisher.cpp)
 target_link_libraries(centauro_polygon_publisher ${catkin_LIBRARIES})
 
+add_executable(centauro_force_estimation src/ForceEstimation.cpp)
+target_link_libraries(centauro_force_estimation ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
+
 add_executable(velocity_motion src/velocity_motion.cpp)
 target_link_libraries(velocity_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
@@ -196,6 +199,12 @@ install(TARGETS centauro_polygon_publisher centauro_polygon_publisher
 )
 
 install(TARGETS velocity_motion velocity_motion
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS centauro_force_estimation centauro_force_estimation
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
