@@ -91,6 +91,9 @@ void CentauroTools::HeriHand::callback(const centauro_tools::HeriHandControlCons
     else if(msg->primitive == "finger_4") {
         _primitive.store(14);
     }
+    else if(msg->primitive == "tool_smart_grasp") {
+        _primitive.store(15);
+    }
     else {
         _primitive.store(-1);
     }
@@ -132,7 +135,7 @@ bool CentauroTools::HeriHand::init_control_plugin(XBot::Handle::Ptr handle)
 void CentauroTools::HeriHand::on_start(double time)
 {
     _start_time = time;
-    
+    XBot::Logger::info() << _heri_esc_id_1 << " - " << _heri_esc_id_2 << " - " << _hand << XBot::Logger::endl(); 
 }
 
 void CentauroTools::HeriHand::control_loop(double time, double period)
@@ -188,6 +191,12 @@ void CentauroTools::HeriHand::control_loop(double time, double period)
         
         _hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
     }
+    else if(_primitive.load() == 15) {
+        
+        _hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
+        _hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
+    }
+
     
     // RX publish the hand data
     state.seq = seq;
