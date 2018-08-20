@@ -17,15 +17,15 @@ import geometry_msgs.msg
 class CentauroControl:
     
     def __init__(self):
-        self.l_hand_client = actionlib.SimpleActionClient('/xbotcore/cartesian/arm1_8/reach', cimsg.ReachPoseAction)
-        self.r_hand_client = actionlib.SimpleActionClient('/xbotcore/cartesian/arm2_8/reach', cimsg.ReachPoseAction)
+        self.l_hand_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/arm1_8/reach', cimsg.ReachPoseAction)
+        self.r_hand_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/arm2_8/reach', cimsg.ReachPoseAction)
         
-        self.torso_client = actionlib.SimpleActionClient('/xbotcore/cartesian/pelvis/reach', cimsg.ReachPoseAction)
+        self.torso_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/pelvis/reach', cimsg.ReachPoseAction)
         
-        self.fl_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_1/reach', cimsg.ReachPoseAction)
-        self.fr_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_2/reach', cimsg.ReachPoseAction)
-        self.hl_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_3/reach', cimsg.ReachPoseAction)
-        self.hr_wheel_client = actionlib.SimpleActionClient('/xbotcore/cartesian/wheel_4/reach', cimsg.ReachPoseAction)
+        self.fl_wheel_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/wheel_1/reach', cimsg.ReachPoseAction)
+        self.fr_wheel_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/wheel_2/reach', cimsg.ReachPoseAction)
+        self.hl_wheel_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/wheel_3/reach', cimsg.ReachPoseAction)
+        self.hr_wheel_client = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/wheel_4/reach', cimsg.ReachPoseAction)
         
 
         
@@ -40,10 +40,10 @@ class CentauroControl:
         self.clients['fr_wheel'] = self.fr_wheel_client
         self.clients['hl_wheel'] = self.hl_wheel_client
         self.clients['hr_wheel'] = self.hr_wheel_client
-        self.clients['fl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_1/reach', cimsg.ReachPoseAction)
-        self.clients['fr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_2/reach', cimsg.ReachPoseAction)
-        self.clients['hl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_3/reach', cimsg.ReachPoseAction)
-        self.clients['hr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/cartesian/ankle2_4/reach', cimsg.ReachPoseAction)
+        self.clients['fl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/ankle2_1/reach', cimsg.ReachPoseAction)
+        self.clients['fr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/ankle2_2/reach', cimsg.ReachPoseAction)
+        self.clients['hl_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/ankle2_3/reach', cimsg.ReachPoseAction)
+        self.clients['hr_wheel_z'] = actionlib.SimpleActionClient('/xbotcore/centauro/cartesian/ankle2_4/reach', cimsg.ReachPoseAction)
         
         self.link_names = {}
         self.link_names['l_hand'] = 'LWrMot3'
@@ -91,9 +91,9 @@ class CentauroControl:
         
     def set_base_link(self, ee_name, new_base_link):
         
-        rospy.wait_for_service('/xbotcore/cartesian/' + self.link_names[ee_name] +'/set_task_properties')
+        rospy.wait_for_service('/xbotcore/centauro/cartesian/' + self.link_names[ee_name] +'/set_task_properties')
         try:
-            set_task_info_srv = rospy.ServiceProxy('/xbotcore/cartesian/' + self.link_names[ee_name] +'/set_task_properties', cisrv.SetTaskInfo)
+            set_task_info_srv = rospy.ServiceProxy('/xbotcore/centauro/cartesian/' + self.link_names[ee_name] +'/set_task_properties', cisrv.SetTaskInfo)
             req = cisrv.SetTaskInfoRequest()
             req.base_link = new_base_link
             res = cisrv.SetTaskInfoResponse()
@@ -105,9 +105,9 @@ class CentauroControl:
             
     def set_task_active(self, ee_name, active_flag):
         
-        rospy.wait_for_service('/xbotcore/cartesian/' + self.link_names[ee_name] +'/activate_task')
+        rospy.wait_for_service('/xbotcore/centauro/cartesian/' + self.link_names[ee_name] +'/activate_task')
         try:
-            set_task_info_srv = rospy.ServiceProxy('/xbotcore/cartesian/' + self.link_names[ee_name] +'/activate_task', stdsrv.SetBool)
+            set_task_info_srv = rospy.ServiceProxy('/xbotcore/centauro/cartesian/' + self.link_names[ee_name] +'/activate_task', stdsrv.SetBool)
             req = stdsrv.SetBoolRequest()
             req = active_flag
             res = stdsrv.SetBoolResponse()
@@ -118,7 +118,7 @@ class CentauroControl:
             print "Service call failed: %s" % e
             
     def load_controller(self, ctrl_name):
-        load_ctrl_srv = rospy.ServiceProxy('/xbotcore/cartesian/load_controller', cisrv.LoadController)
+        load_ctrl_srv = rospy.ServiceProxy('/xbotcore/centauro/cartesian/load_controller', cisrv.LoadController)
         req = cisrv.LoadControllerRequest()
         req.controller_name = ctrl_name
         res = load_ctrl_srv(req)
