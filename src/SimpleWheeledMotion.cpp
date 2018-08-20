@@ -174,7 +174,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
     _autostack = (  ( _waist_cart + p_pos_z_aggr) /
-                    ( wheel_pos_aggr ) / 
+                    ( wheel_pos_aggr + wheel_z_aggr ) / 
                     ( rolling_aggr + pp_or_xy_aggr + ee_aggr + 0.0001 * _postural ) 
                   ) << velocity_lims << joint_lims;
                  
