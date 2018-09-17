@@ -7,10 +7,10 @@ project(centauro_tools)
 find_package(catkin REQUIRED COMPONENTS actionlib_msgs robot_state_publisher tf_conversions roscpp std_msgs sensor_msgs std_srvs geometry_msgs message_generation eigen_conversions)
 
 ## System dependencies are found with CMake's conventions
-find_package(OpenSoT REQUIRED)
-find_package(XBotInterface REQUIRED)
+find_package(OpenSoT)
+find_package(XBotInterface)
 find_package(Boost REQUIRED COMPONENTS program_options filesystem)
-find_package(cartesian_interface REQUIRED)
+find_package(cartesian_interface)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -109,6 +109,11 @@ catkin_package(
                 actionlib_msgs
    DEPENDS
 )
+
+if(NOT OpenSOT_FOUND OR NOT XBotInterface_FOUND OR NOT cartesian_interface_FOUND)
+    message(WARNING "OpenSOT/XBotInterface/cartesian_interface not found, only generating messages...")
+    return()
+endif()
 
 ###########
 ## Build ##
