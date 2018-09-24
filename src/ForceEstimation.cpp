@@ -4,6 +4,14 @@
 #include <vector>
 #include <geometry_msgs/WrenchStamped.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <std_srvs/Trigger.h>
+
+XBot::ModelInterface::Ptr model;
+XBot::RobotInterface::Ptr robot;
+XBot::ImuSensor::ConstPtr imu;
+Eigen::VectorXd res_offset;
+
+bool calibrate_callback(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res);
 
 int main(int argc, char **argv)
 {
@@ -12,22 +20,28 @@ int main(int argc, char **argv)
     auto xbot_cfg = XBot::ConfigOptions::FromConfigFile(XBot::Utils::getXBotConfig());
     
     auto logger = XBot::MatLogger::getLogger("/tmp/centauro_force_estimation_log");
-    auto robot = XBot::RobotInterface::getRobot(xbot_cfg);
-    auto model = XBot::ModelInterface::getModel(xbot_cfg);
-    auto imu = robot->getImu().at("imu_link");
+    robot = XBot::RobotInterface::getRobot(xbot_cfg);
+    model = XBot::ModelInterface::getModel(xbot_cfg);
+    imu = robot->getImu().at("imu_link");
+    
+    res_offset.setZero(model->getJointNum());
     
     std::vector<std::string> wheels = {"wheel_1", "wheel_2", "wheel_3", "wheel_4"};
-    std::vector<ros::Publisher> pubs;
+    std::vector<ros::Publisher> pubs, pubs_world;
     
     for(int i = 0; i < 4; i++)
     {
         auto pub = nh.advertise<geometry_msgs::WrenchStamped>("estimated_force_" + std::to_string(i+1), 1);
+        auto pub_w = nh.advertise<geometry_msgs::WrenchStamped>("w_estimated_force_" + std::to_string(i+1), 1);
         pubs.push_back(pub);
+        pubs_world.push_back(pub_w);
     }
+    
+    auto srv = nh.advertiseService("calibrate_offset", calibrate_callback);
     
     ros::Rate loop_rate(100);
     
-    Eigen::VectorXd tau, nl;
+    Eigen::VectorXd tau, nl, res;
     Eigen::MatrixXd J;
     
     while(ros::ok())
@@ -40,6 +54,8 @@ int main(int argc, char **argv)
         model->getJointEffort(tau);
         model->computeNonlinearTerm(nl);
         
+        res = nl - tau - res_offset;
+        
         for(int i = 0; i < 4; i++)
         {
             Eigen::Matrix3d w_R_wheel;
@@ -48,12 +64,10 @@ int main(int argc, char **argv)
             int start_dof = model->getDofIndex("hip_yaw_" + std::to_string(i+1));
             auto Jt = J.topRows<3>().middleCols(start_dof, 5).transpose();
             
-            Eigen::Vector3d f_est = Jt.jacobiSvd(Eigen::ComputeThinU|Eigen::ComputeThinV).solve((nl - tau).segment(start_dof, 5));
+            Eigen::Vector3d f_est = Jt.jacobiSvd(Eigen::ComputeThinU|Eigen::ComputeThinV).solve(res.segment(start_dof, 5));
             
             logger->add("f_est_" + std::to_string(i+1), f_est);
-            logger->add("tau_residual_" + std::to_string(i+1), (nl - tau).segment(start_dof, 5));
-            
-            f_est = w_R_wheel.transpose() * f_est;
+            logger->add("tau_residual_" + std::to_string(i+1), res.segment(start_dof, 5));
             
             geometry_msgs::WrenchStamped msg;
             msg.header.frame_id = wheels[i];
@@ -63,7 +77,19 @@ int main(int argc, char **argv)
             msg.wrench.force.y = f_est.y();
             msg.wrench.force.z = f_est.z();
             
-            pubs[i].publish(msg);
+            pubs_world[i].publish(msg);
+            
+            f_est = w_R_wheel.transpose() * f_est;
+            
+            geometry_msgs::WrenchStamped msg1;
+            msg1.header.frame_id = wheels[i];
+            msg1.header.stamp = ros::Time::now();
+            
+            msg1.wrench.force.x = f_est.x();
+            msg1.wrench.force.y = f_est.y();
+            msg1.wrench.force.z = f_est.z();
+            
+            pubs[i].publish(msg1);
             
         }
         
@@ -72,5 +98,36 @@ int main(int argc, char **argv)
     }
     
     logger->flush();
+    
+}
+
+
+bool calibrate_callback(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
+{
+    ros::Rate r(100);
+    Eigen::VectorXd tau, nl; 
+    
+    res_offset *= 0.0;
+    
+    
+    for(int i = 0; i < 100; i++)
+    {
+        robot->sense();
+        model->syncFrom(*robot, XBot::Sync::All, XBot::Sync::MotorSide);
+        model->setFloatingBaseState(imu);
+        model->update();
+        
+        model->getJointEffort(tau);
+        model->computeNonlinearTerm(nl);
+        
+        res_offset += (nl - tau)/100.0;
+        
+        r.sleep();
+    }
+    
+    res.message = "Calibration performed successfully";
+    res.success = true;
+    
+    return true;
     
 }

@@ -175,7 +175,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
 
     _autostack = ( 
                     ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + p_pos_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr + _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
+                    ( rolling_aggr + pp_or_xy_aggr + _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural )
                   ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
