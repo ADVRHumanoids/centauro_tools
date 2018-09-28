@@ -31,6 +31,9 @@ namespace XBot { namespace Cartesian {
                                 std::string base_link);
         
         void setReference(const Eigen::Vector3d& ref);
+        Eigen::Vector3d getReference() const;
+        
+        void reset();
         
         const std::string& getDistalLink() const;
         
@@ -123,6 +126,8 @@ namespace XBot { namespace Cartesian {
         virtual bool setBaseLink(const std::string& ee_name, const std::string& new_base_link);
         
         virtual bool setControlMode(const std::string& ee_name, ControlType ctrl_type);
+        
+        virtual bool reset(double time);
         
         virtual ~WheeledMotionImpl();
 

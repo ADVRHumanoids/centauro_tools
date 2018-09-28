@@ -173,9 +173,9 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto velocity_lims = boost::make_shared<OpenSoT::constraints::velocity::VelocityLimits>(qdotmax, 0.01);
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
-    _autostack = (  ( _waist_cart + p_pos_z_aggr) /
-                    ( wheel_pos_aggr + wheel_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr + ee_aggr + 0.0001 * _postural ) 
+    _autostack = ( 
+                    ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
+                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
                   ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
@@ -279,6 +279,43 @@ bool WheeledMotionImpl::setControlMode(const std::string& ee_name, CartesianInte
     }
     
     return false;
+}
+
+bool WheeledMotionImpl::reset(double time)
+{
+    if(!XBot::Cartesian::CartesianInterfaceImpl::reset(time))
+    {
+        throw std::runtime_error("CartesianInterfaceImpl::reset returned error");
+    }
+    
+    Logger::info("WheeledMotion: resetting references for tasks\n");
+    for(auto t :_wheel_cart_rel)
+    {
+        t->reset();
+        Eigen::Vector3d ref = t->getReference();
+        
+        Eigen::Affine3d curr_ref;
+        getPoseReference(t->getDistalLink(), curr_ref);
+        
+        curr_ref.translation() = ref;
+        setPoseReferenceRaw(t->getDistalLink(), curr_ref);
+    }
+    
+    for(auto t : _wheel_cart)
+    {
+        Eigen::Affine3d T;
+        _model->getPose(t->getDistalLink(), T);
+        t->setReference(T.matrix());
+    }
+    
+    for(auto t : _pp_cart)
+    {
+        Eigen::Affine3d T;
+        _model->getPose(t->getDistalLink(), T);
+        t->setReference(T.matrix());
+    }
+    
+    return true;
 }
 
 
@@ -520,6 +557,7 @@ const std::string& CustomRelativeCartesian::getDistalLink() const
 
 void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
 {
+    
     Eigen::Affine3d w_T_base;
     _robot.getPose(_base, w_T_base);
     Eigen::Matrix3d w_R_base = w_T_base.linear();
@@ -530,19 +568,13 @@ void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
     double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
     Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     
-    _ref = w_R_horz.transpose() * (w_ref - w_T_base.translation());
+    _ref = ref; //(w_ref - w_T_base.translation());
+    
+//     std::cout << __func__ << "  _ref: " << _ref.transpose() << std::endl;
 }
 
-
-CustomRelativeCartesian::CustomRelativeCartesian(const XBot::ModelInterface& robot, 
-                                                 std::string distal_link, 
-                                                 std::string base_link): 
-    Task< Eigen::MatrixXd, Eigen::VectorXd >("CUSTOM_REL_" + distal_link, robot.getJointNum()),
-    _robot(robot),
-    _base(base_link),
-    _distal(distal_link)
+void XBot::Cartesian::CustomRelativeCartesian::reset()
 {
-    
     Eigen::Vector3d distal_pos, base_pos;
     
     _robot.getPointPosition(_base, Eigen::Vector3d::Zero(), base_pos);
@@ -555,6 +587,21 @@ CustomRelativeCartesian::CustomRelativeCartesian(const XBot::ModelInterface& rob
     Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     
     _ref = w_R_horz.transpose()*(distal_pos - base_pos);
+    
+//     std::cout << __func__ << "  _ref: " << _ref.transpose() << std::endl;
+}
+
+
+CustomRelativeCartesian::CustomRelativeCartesian(const XBot::ModelInterface& robot, 
+                                                 std::string distal_link, 
+                                                 std::string base_link): 
+    Task< Eigen::MatrixXd, Eigen::VectorXd >("CUSTOM_REL_" + distal_link, robot.getJointNum()),
+    _robot(robot),
+    _base(base_link),
+    _distal(distal_link)
+{
+    
+    reset();
 
     _update(Eigen::VectorXd());
     _W.setIdentity(3,3);
@@ -575,6 +622,10 @@ Eigen::Vector3d CustomRelativeCartesian::getError() const
     return _error;
 }
 
+Eigen::Vector3d CustomRelativeCartesian::getReference() const
+{
+    return _ref;
+}
 
 
 void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
@@ -599,12 +650,15 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     _error = w_R_horz*_ref - (distal_pos - base_pos);
 
     _b = _lambda * (_error);
+    
+//     std::cout << __func__ << "  _ref: " << _ref.transpose() << "   error: " << _error.transpose() << std::endl;
    
 }
 
 void CustomRelativeCartesian::_log(MatLogger::Ptr logger)
 {
     logger->add(_task_id + "_error", _error);
+    logger->add(_task_id + "_ref", _ref);
 }
 
 
