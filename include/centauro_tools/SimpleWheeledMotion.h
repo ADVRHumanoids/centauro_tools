@@ -33,7 +33,7 @@ namespace XBot { namespace Cartesian {
         void setReference(const Eigen::Vector3d& ref);
         Eigen::Vector3d getReference() const;
         
-        void reset();
+        virtual bool reset() override;
         
         const std::string& getDistalLink() const;
         

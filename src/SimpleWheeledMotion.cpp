@@ -573,7 +573,7 @@ void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
 //     std::cout << __func__ << "  _ref: " << _ref.transpose() << std::endl;
 }
 
-void XBot::Cartesian::CustomRelativeCartesian::reset()
+bool XBot::Cartesian::CustomRelativeCartesian::reset()
 {
     Eigen::Vector3d distal_pos, base_pos;
     
