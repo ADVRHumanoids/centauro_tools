@@ -116,6 +116,7 @@ bool CentauroTools::HeriHand::init_control_plugin(XBot::Handle::Ptr handle)
         return false;
     }
     // get the low level interface for the hand HACK hardcoded id
+    
     _hand = get_xbotcore_halInterface()->getHandId(_heri_esc_id_1);
     // RT ROS subscriber
     _sub_rt = handle->getRosHandle()->subscribe<centauro_tools::HeriHandControl>("/heri_hand_control", 
@@ -135,69 +136,68 @@ bool CentauroTools::HeriHand::init_control_plugin(XBot::Handle::Ptr handle)
 void CentauroTools::HeriHand::on_start(double time)
 {
     _start_time = time;
-    XBot::Logger::info() << _heri_esc_id_1 << " - " << _heri_esc_id_2 << " - " << _hand << XBot::Logger::endl(); 
+    XBot::Logger::info() << _heri_esc_id_1 << " - " << _heri_esc_id_2 << XBot::Logger::endl(); 
 }
 
 void CentauroTools::HeriHand::control_loop(double time, double period)
 {
-    // TX command the requested grasping primitive
-    if(_primitive.load() == 0) {
-        
-        _hand->grasp(_heri_esc_id_1, _percentage.load());
-        _hand->grasp(_heri_esc_id_2, _percentage.load());
-    }
-    else if(_primitive.load() == 1) {
-        
-        _hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
-        _hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
-    }
-    else if(_primitive.load() == 2) {
-        
-        _hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
-        
-        _hand->move_finger(_heri_esc_id_1, 1, 1.0);
-        _hand->move_finger(_heri_esc_id_1, 2, 1.0);
-        _hand->move_finger(_heri_esc_id_2, 2, 1.0);
-    }
-    else if(_primitive.load() == 3) {
-        
-        _hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
-        _hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
-        _hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
-    }
-    else if(_primitive.load() == 4) {
-        
-        _hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
-    }
-    else if(_primitive.load() == 5) {
-        
-        _hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
-        _hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
-        _hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
-    }
-    else if(_primitive.load() == 11) {
-        
-        _hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
-    }
-    else if(_primitive.load() == 12) {
-        
-        _hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
-    }
-    else if(_primitive.load() == 13) {
-        
-        _hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
-    }
-    else if(_primitive.load() == 14) {
-        
-        _hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
-    }
-    else if(_primitive.load() == 15) {
-        
-        _hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
-        _hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
-    }
+    if( _hand ) {
+	    // TX command the requested grasping primitive
+	    if(_primitive.load() == 0) {
+		_hand->grasp(_heri_esc_id_1, _percentage.load());
+		_hand->grasp(_heri_esc_id_2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 1) {
+		_hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
+		_hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 2) {
+		
+		_hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
+		
+		_hand->move_finger(_heri_esc_id_1, 1, 1.0);
+		_hand->move_finger(_heri_esc_id_1, 2, 1.0);
+		_hand->move_finger(_heri_esc_id_2, 2, 1.0);
+	    }
+	    else if(_primitive.load() == 3) {
+		
+		_hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
+		_hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
+		_hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 4) {
+		
+		_hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
+	    }
+	    else if(_primitive.load() == 5) {
+		
+		_hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
+		_hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
+		_hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 11) {
+		
+		_hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
+	    }
+	    else if(_primitive.load() == 12) {
+		
+		_hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 13) {
+		
+		_hand->move_finger(_heri_esc_id_2, 1, _percentage.load());
+	    }
+	    else if(_primitive.load() == 14) {
+		
+		_hand->move_finger(_heri_esc_id_2, 2, _percentage.load());
+	    }
+	    else if(_primitive.load() == 15) {
+		
+		_hand->move_finger(_heri_esc_id_1, 1, _percentage.load());
+		_hand->move_finger(_heri_esc_id_1, 2, _percentage.load());
+	    }
 
-    
+    }
     // RX publish the hand data
     state.seq = seq;
 //     state.stamp = time; //TBD check it
@@ -208,11 +208,12 @@ void CentauroTools::HeriHand::control_loop(double time, double period)
     centauro_tools::HeriHandFinger finger;
     // TBD iterate over the fingers and fill the state 
     // NOTE | _heri_esc_id_1.1 -> 1 | _heri_esc_id_1.2 -> 2 | _heri_esc_id_2.1 -> 3 | _heri_esc_id_2.2 -> 4 |
-    
-    _hand->get_finger_motor_position(_heri_esc_id_1, 1, motor_pos);
-    _hand->get_finger_current(_heri_esc_id_1, 1, current);
-    _hand->get_finger_analog_sensors(_heri_esc_id_1, 1, an1, an2, an3);
-    _hand->get_finger_position_reference(_heri_esc_id_1, 1, pos_ref);
+    if( _hand ) {
+        _hand->get_finger_motor_position(_heri_esc_id_1, 1, motor_pos);
+        _hand->get_finger_current(_heri_esc_id_1, 1, current);
+        _hand->get_finger_analog_sensors(_heri_esc_id_1, 1, an1, an2, an3);
+        _hand->get_finger_position_reference(_heri_esc_id_1, 1, pos_ref);
+    }
     analogs.analog_1 = an1;
     analogs.analog_2 = an2;
     analogs.analog_3 = an3;
@@ -227,11 +228,13 @@ void CentauroTools::HeriHand::control_loop(double time, double period)
     _logger->add("finger_1_analog_1", an1);
     _logger->add("finger_1_analog_2", an2);
     _logger->add("finger_1_analog_3", an3);
-
-    _hand->get_finger_motor_position(_heri_esc_id_1, 2, motor_pos);
-    _hand->get_finger_current(_heri_esc_id_1, 2, current);
-    _hand->get_finger_analog_sensors(_heri_esc_id_1, 2, an1, an2, an3);
-    _hand->get_finger_position_reference(_heri_esc_id_1, 2, pos_ref);
+    
+    if ( _hand ) {
+        _hand->get_finger_motor_position(_heri_esc_id_1, 2, motor_pos);
+        _hand->get_finger_current(_heri_esc_id_1, 2, current);
+        _hand->get_finger_analog_sensors(_heri_esc_id_1, 2, an1, an2, an3);
+        _hand->get_finger_position_reference(_heri_esc_id_1, 2, pos_ref);
+    }
     analogs.analog_1 = an1;
     analogs.analog_2 = an2;
     analogs.analog_3 = an3;
@@ -247,10 +250,12 @@ void CentauroTools::HeriHand::control_loop(double time, double period)
     _logger->add("finger_2_analog_2", an2);
     _logger->add("finger_2_analog_3", an3);
     
-    _hand->get_finger_motor_position(_heri_esc_id_2, 1, motor_pos);
-    _hand->get_finger_current(_heri_esc_id_2, 1, current);
-    _hand->get_finger_analog_sensors(_heri_esc_id_2, 1, an1, an2, an3);
-    _hand->get_finger_position_reference(_heri_esc_id_2, 1, pos_ref);
+    if ( _hand ) {
+    	_hand->get_finger_motor_position(_heri_esc_id_2, 1, motor_pos);
+        _hand->get_finger_current(_heri_esc_id_2, 1, current);
+    	_hand->get_finger_analog_sensors(_heri_esc_id_2, 1, an1, an2, an3);
+    	_hand->get_finger_position_reference(_heri_esc_id_2, 1, pos_ref);
+    }
     analogs.analog_1 = an1;
     analogs.analog_2 = an2;
     analogs.analog_3 = an3;
@@ -266,10 +271,12 @@ void CentauroTools::HeriHand::control_loop(double time, double period)
     _logger->add("finger_3_analog_2", an2);
     _logger->add("finger_3_analog_3", an3);
     
-    _hand->get_finger_motor_position(_heri_esc_id_2, 2, motor_pos);
-    _hand->get_finger_current(_heri_esc_id_2, 2, current);
-    _hand->get_finger_analog_sensors(_heri_esc_id_2, 2, an1, an2, an3);
-    _hand->get_finger_position_reference(_heri_esc_id_2, 2, pos_ref);
+    if ( _hand ) {
+    	_hand->get_finger_motor_position(_heri_esc_id_2, 2, motor_pos);
+    	_hand->get_finger_current(_heri_esc_id_2, 2, current);
+    	_hand->get_finger_analog_sensors(_heri_esc_id_2, 2, an1, an2, an3);
+    	_hand->get_finger_position_reference(_heri_esc_id_2, 2, pos_ref);
+    }
     analogs.analog_1 = an1;
     analogs.analog_2 = an2;
     analogs.analog_3 = an3;
