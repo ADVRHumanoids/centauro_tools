@@ -62,14 +62,17 @@ def get_down_stable():
    
 def get_push_brick_fr():
 
+
     fr_pose = geomsg.Pose()
-    fr_pose.position.x = 0.58
-    fr_pose.position.y = -0.42
+    fr_pose.position.x = 0.55
+    fr_pose.position.y = -0.60
     fr_pose.position.z = -0.7
     fr_pose.orientation.x = 0.0
     fr_pose.orientation.y = 0.0
     fr_pose.orientation.z = 0.0
     fr_pose.orientation.w = 1.0   
+    
+    
     
     return fr_pose
 
@@ -116,7 +119,7 @@ def get_homing():
     waist = geomsg.Pose()
     waist.position.x = 0.0
     waist.position.y = 0.0
-    waist.position.z = 0.90
+    waist.position.z = 0.926
     waist.orientation.x = 0.0
     waist.orientation.y = 0.0
     waist.orientation.z = 0.0

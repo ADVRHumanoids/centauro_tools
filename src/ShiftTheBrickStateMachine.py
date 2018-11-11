@@ -65,7 +65,7 @@ class PushBrick(smach.State):
         
         fr_delta = geomsg.Pose()
         fr_delta.position.x =  0.2
-        fr_delta.position.y = -0.2
+        fr_delta.position.y = -0.35
         fr_delta.position.z =  0.0
 
         robot.go_to('fr_wheel', fr_delta, 4.0, True)
@@ -73,7 +73,15 @@ class PushBrick(smach.State):
         
         fr_delta = geomsg.Pose()
         fr_delta.position.x = -0.2
-        fr_delta.position.y = 0.2
+        fr_delta.position.y = 0.35
+        fr_delta.position.z = 0.0
+
+        robot.go_to('fr_wheel', fr_delta, 2.0, True)
+        robot.wait_for_result('fr_wheel')
+        
+        fr_delta = geomsg.Pose()
+        fr_delta.position.x = 0.0
+        fr_delta.position.y = 0.0
         fr_delta.position.z = -0.05
 
         robot.go_to('fr_wheel', fr_delta, 2.0, True)
@@ -90,6 +98,8 @@ class Home(smach.State):
     def execute(self, userdata):
         
         rospy.loginfo('Executing state HOMING')
+        
+        raw_input('Enter to go homing')
         
         robot.load_controller('WheeledMotion')
         
