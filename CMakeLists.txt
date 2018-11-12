@@ -167,6 +167,8 @@ target_link_libraries(centauro_polygon_publisher ${catkin_LIBRARIES})
 add_executable(centauro_force_estimation src/ForceEstimation.cpp)
 target_link_libraries(centauro_force_estimation ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 
+add_executable(centauro_reset_world src/CentauroCiResetWorld.cpp)
+target_link_libraries(centauro_reset_world ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 add_executable(velocity_motion src/velocity_motion.cpp)
 target_link_libraries(velocity_motion ${XBotInterface_LIBRARIES} ${catkin_LIBRARIES} yaml-cpp)
 
@@ -187,6 +189,12 @@ if ( Xenomai_FOUND )
 endif()
 
 install(TARGETS unicycle_tracking unicycle_tracking
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS centauro_reset_world centauro_reset_world
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
