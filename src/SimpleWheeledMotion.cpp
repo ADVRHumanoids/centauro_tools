@@ -157,7 +157,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                     *_model,
                                                     "pelvis",
                                                     "world"
-                                                );
+                                                   );
      _waist_cart->setLambda(0.05);
      _cartesian_tasks.push_back(_waist_cart);
 
@@ -175,8 +175,9 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
 
     _autostack = ( 
                     ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr + 0.0001 * _postural ) 
-                  ) << velocity_lims << joint_lims;
+                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr ) / // + 0.0001 * _postural ) 
+                      _postural
+                 ) << velocity_lims << joint_lims;
                  
     _autostack->update(_q);
 
@@ -184,7 +185,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     /* Create solver */
     _solver = boost::make_shared<OpenSoT::solvers::iHQP>(_autostack->getStack(),
                                                          _autostack->getBounds(),
-                                                         1e-4,
+                                                         1e8,
                                                          OpenSoT::solvers::solver_back_ends::OSQP
                                                         );
     
