@@ -30,7 +30,9 @@ namespace XBot { namespace Cartesian {
                                 std::string distal_link, 
                                 std::string base_link);
         
-        void setReference(const Eigen::Vector3d& ref);
+        void setReference(const Eigen::Vector3d& ref, 
+                          const Eigen::Vector3d& vref = Eigen::Vector3d::Zero());
+        
         Eigen::Vector3d getReference() const;
         
         virtual bool reset() override;
@@ -51,7 +53,7 @@ namespace XBot { namespace Cartesian {
         const ModelInterface& _robot;
         std::string _base, _distal;
         
-        Eigen::Vector3d _ref;
+        Eigen::Vector3d _ref, _vref;
         Eigen::Vector3d _error;
         
         

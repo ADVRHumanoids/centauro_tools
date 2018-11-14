@@ -194,6 +194,11 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     {
         _lambda_map[t->getDistalLink()] = t->getLambda();
     }
+    
+    for(auto t : _wheel_cart_rel)
+    {
+        _lambda_map[t->getDistalLink()] = t->getLambda();
+    }
 }
 
 double SimpleSteering::sign(double x)
@@ -239,6 +244,14 @@ bool WheeledMotionImpl::setControlMode(const std::string& ee_name, CartesianInte
     }
     
     for(const auto t : _cartesian_tasks)
+    {
+        if(t->getDistalLink() == ee_name)
+        {
+            task_ptr = t;
+        }
+    }
+    
+    for(const auto t : _wheel_cart_rel)
     {
         if(t->getDistalLink() == ee_name)
         {
@@ -356,7 +369,7 @@ bool WheeledMotionImpl::update(double time, double period)
             continue;
         }
 
-        cart_task->setReference(T_ref.translation());
+        cart_task->setReference(T_ref.translation(), v_ref.head<3>()*period);
     }
     
     
@@ -556,22 +569,12 @@ const std::string& CustomRelativeCartesian::getDistalLink() const
 }
 
 
-void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref)
+void CustomRelativeCartesian::setReference(const Eigen::Vector3d& ref, const Eigen::Vector3d& vref)
 {
     
-    Eigen::Affine3d w_T_base;
-    _robot.getPose(_base, w_T_base);
-    Eigen::Matrix3d w_R_base = w_T_base.linear();
-    
-    
-    Eigen::Vector3d w_ref = w_T_base * ref;
-    
-    double theta_base = std::atan2(w_R_base(1,0), w_R_base(0,0));
-    Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
-    
     _ref = ref; //(w_ref - w_T_base.translation());
+    _vref = vref;
     
-//     std::cout << __func__ << "  _ref: " << _ref.transpose() << std::endl;
 }
 
 bool XBot::Cartesian::CustomRelativeCartesian::reset()
@@ -588,6 +591,7 @@ bool XBot::Cartesian::CustomRelativeCartesian::reset()
     Eigen::Matrix3d w_R_horz = Eigen::AngleAxisd(theta_base, Eigen::Vector3d::UnitZ()).toRotationMatrix();
     
     _ref = w_R_horz.transpose()*(distal_pos - base_pos);
+    _vref.setZero();
     
 //     std::cout << __func__ << "  _ref: " << _ref.transpose() << std::endl;
 }
@@ -650,7 +654,8 @@ void CustomRelativeCartesian::_update(const Eigen::VectorXd& x)
     
     _error = w_R_horz*_ref - (distal_pos - base_pos);
 
-    _b = _lambda * (_error);
+    _b = _lambda * (_error) + w_R_horz * _vref;
+    _vref.setZero();
     
 //     std::cout << __func__ << "  _ref: " << _ref.transpose() << "   error: " << _error.transpose() << std::endl;
    
