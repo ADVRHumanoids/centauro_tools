@@ -1,7 +1,7 @@
 #include <centauro_tools/SimpleWheeledMotion.h>
 #include <OpenSoT/constraints/velocity/VelocityLimits.h>
 #include <OpenSoT/constraints/velocity/JointLimits.h>
-
+#include <OpenSoT/constraints/TaskToConstraint.h>
 
 extern "C" XBot::Cartesian::CartesianInterface* create_instance(XBot::ModelInterface::Ptr model,
                                                                 XBot::Cartesian::ProblemDescription pb)
@@ -120,7 +120,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
                                                                  pp_link,
                                                                  "world"
                                                                 );
-        pp_cartesian->setLambda(0.1);
+        pp_cartesian->setLambda(0.03);
         auto pp_or = pp_cartesian % or_xy_idx;
         
         auto p_cartesian =  boost::make_shared<CartesianTask>("P_CART_" + std::to_string(i),
@@ -173,11 +173,13 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto velocity_lims = boost::make_shared<OpenSoT::constraints::velocity::VelocityLimits>(qdotmax, 0.01);
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
-    _autostack = ( 
-                    ( wheel_pos_aggr + _waist_cart%pos_rotz_idx + wheel_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr +  _waist_cart%or_xy_idx + ee_aggr ) / // + 0.0001 * _postural ) 
+    _autostack = (  
+                    ( _waist_cart + wheel_z_aggr ) / 
+                    ( rolling_aggr + pp_or_xy_aggr + ee_aggr ) / // + 0.0001 * _postural ) 
                       _postural
-                 ) << velocity_lims << joint_lims;
+                 ) << velocity_lims 
+                   << joint_lims 
+                   << boost::make_shared<OpenSoT::constraints::TaskToConstraint>(wheel_pos_aggr);
                  
     _autostack->update(_q);
 
@@ -392,13 +394,18 @@ bool WheeledMotionImpl::update(double time, double period)
     for(int i = 0; i < NUM_WHEELS; i++)
     {
         auto& steering = _steering[i];
-        std::string ankle_name = get_parent(get_parent(steering.getWheelName()));
-        
-        steering.log(_logger);
-        
+        std::string ankle_name = get_parent(steering.getWheelName());
         Eigen::Vector6d wheel_vel;
         _model->getVelocityTwist(ankle_name, wheel_vel);
         _logger->add(steering.getWheelName() + "_vel", wheel_vel);
+        Eigen::Matrix3d w_R_ankle;
+        _model->getOrientation(ankle_name, w_R_ankle);
+        wheel_vel.head<3>() += wheel_vel.tail<3>().cross(w_R_ankle * Eigen::Vector3d(0.0, 0.0, 0.30));
+        
+        steering.log(_logger);
+        
+        
+        
         
         wheel_vref = _wheel_cart_rel[i]->getError().head<3>();
         _qpostural(steering.getDofIndex()) = steering.computeSteeringAngle(waist_vref*0, wheel_vel.head<3>());
@@ -460,7 +467,7 @@ SimpleSteering::SimpleSteering(XBot::ModelInterface::ConstPtr model,
                                std::string wheel_name):
     _model(model),
     _wheel_name(wheel_name),
-    _comp(0.0015, 0.002)
+    _comp(0.0025, 0.01)
 {
     auto spinning_axis = _model->getUrdf().getLink(wheel_name)->parent_joint->axis;
     _wheel_spinning_axis << spinning_axis.x, spinning_axis.y, spinning_axis.z;
@@ -492,6 +499,23 @@ double SimpleSteering::getDofIndex() const
     return _steering_id;
 }
 
+namespace 
+{
+    double dead_zone(double x, double th)
+    {
+        if(x > th)
+        {
+            return x - th;
+        }
+        
+        if(x < -th)
+        {
+            return x + th;
+        }
+        
+        return 0.0;
+    }
+}
 
 double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel, 
                                             const Eigen::Vector3d& __wheel_vel)
@@ -519,13 +543,18 @@ double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel,
     Eigen::Vector3d r = w_T_wheel.translation() - w_T_waist.translation();
     _vdes = wheel_vel + waist_vel + waist_vel.z()*Eigen::Vector3d::UnitZ().cross(r);
     
-    if( !_comp.compare(_vdes.head(2).norm()) ) 
+    Eigen::Vector3d vdes_th = _vdes;
+    
+    vdes_th.x() = dead_zone(vdes_th.x(), 0.01);
+    vdes_th.y() = dead_zone(vdes_th.y(), 0.01);
+    
+    if( vdes_th.head(2).norm() == 0.0 ) 
     {
-        _vdes << 1.0, 0.0, 0.0;
-        _vdes = w_T_waist.linear() * _vdes;
+        vdes_th << 1.0, 0.0, 0.0;
+        vdes_th = w_T_waist.linear() * vdes_th;
     }
     
-    double des_theta_1 = std::atan2(_vdes.y(), _vdes.x());
+    double des_theta_1 = std::atan2(vdes_th.y(), vdes_th.x());
     
     double des_q_1 = q  + (des_theta_1 - theta)*_world_steering_axis.z();
     des_q_1 = wrap_angle(des_q_1);
@@ -558,6 +587,7 @@ double SimpleSteering::computeSteeringAngle(const Eigen::Vector3d& waist_vel,
 void SimpleSteering::log(MatLogger::Ptr logger)
 {
     logger->add("vdes_"+_wheel_name, _vdes);
+    logger->add("vdes_norm_"+_wheel_name, double(_vdes.head<2>().norm()));
     logger->add("threshold_"+_wheel_name, _comp.getCurrentThreshold());
 }
 
