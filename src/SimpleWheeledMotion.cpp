@@ -177,13 +177,13 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto velocity_lims = boost::make_shared<OpenSoT::constraints::velocity::VelocityLimits>(qdotmax, 0.01);
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
-    _autostack = (  ( wheel_pos_aggr ) /
-                    ( _waist_cart + p_pos_z_aggr ) / 
-                    ( rolling_aggr + pp_or_xy_aggr + ee_aggr ) / // + 0.0001 * _postural ) 
+    _autostack = (  
+                    ( _waist_cart + p_pos_z_aggr + _steering_task%steering_joints_ids ) / 
+                    ( rolling_aggr + pp_or_xy_aggr + ee_aggr ) /
                       _postural
                  ) << velocity_lims 
-                   << joint_lims; 
-//                    << boost::make_shared<OpenSoT::constraints::TaskToConstraint>(wheel_pos_aggr);
+                   << joint_lims
+                   << boost::make_shared<OpenSoT::constraints::TaskToConstraint>(wheel_pos_aggr);
                  
     _autostack->update(_q);
 
@@ -192,7 +192,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     _solver = boost::make_shared<OpenSoT::solvers::iHQP>(_autostack->getStack(),
                                                          _autostack->getBounds(),
                                                          1e8,
-                                                         OpenSoT::solvers::solver_back_ends::qpOASES
+                                                         OpenSoT::solvers::solver_back_ends::OSQP
                                                         );
     
     /* Fill lambda map */
