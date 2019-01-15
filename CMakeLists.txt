@@ -167,6 +167,9 @@ target_link_libraries(centauro_polygon_publisher ${catkin_LIBRARIES})
 add_executable(centauro_force_estimation src/ForceEstimation.cpp)
 target_link_libraries(centauro_force_estimation ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 
+add_executable(imu_orientation_control src/ImuOrientationControl.cpp)
+target_link_libraries(imu_orientation_control ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
+
 add_executable(centauro_reset_world src/CentauroCiResetWorld.cpp)
 target_link_libraries(centauro_reset_world ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 add_executable(velocity_motion src/velocity_motion.cpp)
@@ -224,6 +227,11 @@ install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+install(TARGETS imu_orientation_control imu_orientation_control
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
 #   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

@@ -173,13 +173,13 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     auto velocity_lims = boost::make_shared<OpenSoT::constraints::velocity::VelocityLimits>(qdotmax, 0.01);
     auto joint_lims = boost::make_shared<OpenSoT::constraints::velocity::JointLimits>(_q, qmax, qmin);
 
-    _autostack = (  
-                    ( _waist_cart + wheel_z_aggr ) / 
+    _autostack = (  ( wheel_pos_aggr ) /
+                    ( _waist_cart + p_pos_z_aggr ) / 
                     ( rolling_aggr + pp_or_xy_aggr + ee_aggr ) / // + 0.0001 * _postural ) 
                       _postural
                  ) << velocity_lims 
-                   << joint_lims 
-                   << boost::make_shared<OpenSoT::constraints::TaskToConstraint>(wheel_pos_aggr);
+                   << joint_lims; 
+//                    << boost::make_shared<OpenSoT::constraints::TaskToConstraint>(wheel_pos_aggr);
                  
     _autostack->update(_q);
 
@@ -188,7 +188,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     _solver = boost::make_shared<OpenSoT::solvers::iHQP>(_autostack->getStack(),
                                                          _autostack->getBounds(),
                                                          1e8,
-                                                         OpenSoT::solvers::solver_back_ends::OSQP
+                                                         OpenSoT::solvers::solver_back_ends::qpOASES
                                                         );
     
     /* Fill lambda map */
@@ -230,7 +230,7 @@ bool WheeledMotionImpl::setBaseLink(const std::string& ee_name, const std::strin
     
 }
 
-bool WheeledMotionImpl::setControlMode(const std::string& ee_name, CartesianInterface::ControlType ctrl_type)
+bool WheeledMotionImpl::setControlMode(const std::string& ee_name, ControlType ctrl_type)
 {
     if(!XBot::Cartesian::CartesianInterfaceImpl::setControlMode(ee_name, ctrl_type))
     {
@@ -321,14 +321,14 @@ bool WheeledMotionImpl::reset(double time)
     {
         Eigen::Affine3d T;
         _model->getPose(t->getDistalLink(), T);
-        t->setReference(T.matrix());
+        t->setReference(T);
     }
     
     for(auto t : _pp_cart)
     {
         Eigen::Affine3d T;
         _model->getPose(t->getDistalLink(), T);
-        t->setReference(T.matrix());
+        t->setReference(T);
     }
     
     return true;
@@ -356,7 +356,7 @@ bool WheeledMotionImpl::update(double time, double period)
             continue;
         }
 
-        cart_task->setReference(T_ref.matrix(), v_ref*period);
+        cart_task->setReference(T_ref, v_ref*period);
 
     }
     
@@ -427,8 +427,6 @@ bool WheeledMotionImpl::update(double time, double period)
     _model->setJointVelocity(_dq);
     _model->setJointAcceleration(_ddq);
 
-    _logger->add("q", _q);
-
 
     return success;
 
@@ -440,22 +438,23 @@ std::string WheeledMotionImpl::get_parent(std::string link)
     return _model->getUrdf().getLink(link)->parent_joint->parent_link_name;
 }
 
-std::vector< std::pair< std::string, std::string > > WheeledMotionImpl::__generate_tasks()
+ProblemDescription WheeledMotionImpl::__generate_tasks()
 {
-    std::vector< std::pair< std::string, std::string > > tasks;
-    tasks.emplace_back("world", "pelvis");
-    tasks.emplace_back("pelvis", "wheel_1");
-    tasks.emplace_back("pelvis", "wheel_2");
-    tasks.emplace_back("pelvis", "wheel_3");
-    tasks.emplace_back("pelvis", "wheel_4");
-    tasks.emplace_back("world", "ankle2_1");
-    tasks.emplace_back("world", "ankle2_2");
-    tasks.emplace_back("world", "ankle2_3");
-    tasks.emplace_back("world", "ankle2_4");
-    tasks.emplace_back("pelvis", "arm1_8");
-    tasks.emplace_back("pelvis", "arm2_8");
+    AggregatedTask tasks;
+    
+    tasks.push_back( MakeCartesian("pelvis"  ,"world" ));
+    tasks.push_back( MakeCartesian("wheel_1" ,"pelvis"));
+    tasks.push_back( MakeCartesian("wheel_2" ,"pelvis"));
+    tasks.push_back( MakeCartesian("wheel_3" ,"pelvis"));
+    tasks.push_back( MakeCartesian("wheel_4" ,"pelvis"));
+    tasks.push_back( MakeCartesian("ankle2_1","world" ));
+    tasks.push_back( MakeCartesian("ankle2_2","world" ));
+    tasks.push_back( MakeCartesian("ankle2_3","world" ));
+    tasks.push_back( MakeCartesian("ankle2_4","world" ));
+    tasks.push_back( MakeCartesian("arm1_8"  ,"pelvis"));
+    tasks.push_back( MakeCartesian("arm2_8"  ,"pelvis"));
 
-    return tasks;
+    return ProblemDescription(tasks);
 }
 
 WheeledMotionImpl::~WheeledMotionImpl()

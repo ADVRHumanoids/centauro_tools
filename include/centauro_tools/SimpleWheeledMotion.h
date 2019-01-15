@@ -138,7 +138,7 @@ namespace XBot { namespace Cartesian {
         const int NUM_WHEELS = 4;
         const float RADIUS = 0.078;
 
-        static std::vector<std::pair<std::string, std::string>> __generate_tasks();
+        static ProblemDescription __generate_tasks();
 
         typedef OpenSoT::tasks::velocity::Cartesian CartesianTask;
         typedef OpenSoT::tasks::velocity::PureRollingPosition RollingTask;

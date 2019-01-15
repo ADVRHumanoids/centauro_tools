@@ -137,6 +137,9 @@ void CentauroTools::HeriHand::on_start(double time)
 
 void CentauroTools::HeriHand::control_loop(double time, double period)
 {
+    
+    return;
+    
     // TX command the requested grasping primitive
     if(_primitive.load() == 0) {
         
