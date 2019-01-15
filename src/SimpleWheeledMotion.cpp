@@ -22,7 +22,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
 {
     _model->getJointPosition(_q);
     _qpostural = _q;
-    _ddq = _dq = _q*0;
+    _dq_steering = _ddq = _dq = _q*0;
     
     std::vector<string> joints_out;
     Eigen::VectorXd _q_motor;
@@ -35,10 +35,12 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     
     std::vector<std::string> steering_joints = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
     std::vector<bool> disable_steering(_model->getJointNum(), true);
+    std::list<uint> steering_joints_ids;
     
     for(auto j : steering_joints)
     {
         disable_steering[ _model->getDofIndex(j) ] = false;
+        steering_joints_ids.push_back(_model->getDofIndex(j));
 
     }
     
@@ -164,6 +166,8 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     _postural = boost::make_shared<OpenSoT::tasks::velocity::Postural>(_q);
     _postural->setLambda(0.05);
 
+    _steering_task = boost::make_shared<OpenSoT::tasks::velocity::Postural>(_q);
+    _steering_task->setLambda(0.0);
 
 
 
@@ -414,7 +418,8 @@ bool WheeledMotionImpl::update(double time, double period)
         const double MAX_STEERING_SPEED = 3.0;
         const double MAX_STEERING_DQ = MAX_STEERING_SPEED*period;
         double dq = STEERING_GAIN*(_qpostural(steering.getDofIndex()) - _q(steering.getDofIndex()));
-        _dq(steering.getDofIndex()) = std::min(std::max(dq, -MAX_STEERING_DQ), MAX_STEERING_DQ);
+        _dq_steering(steering.getDofIndex()) = std::min(std::max(dq, -MAX_STEERING_DQ), MAX_STEERING_DQ);
+        _steering_task->setReference(_q, _dq_steering);
         
         
         

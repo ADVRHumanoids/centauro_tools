@@ -146,7 +146,7 @@ namespace XBot { namespace Cartesian {
 
         std::string get_parent(std::string link);
 
-        Eigen::VectorXd _q, _dq, _ddq, _qpostural;
+        Eigen::VectorXd _q, _dq, _ddq, _dq_steering, _qpostural;
 
         CartesianTask::Ptr _waist_cart;
         std::vector<CartesianTask::Ptr> _cartesian_tasks;
@@ -156,7 +156,7 @@ namespace XBot { namespace Cartesian {
         std::vector<CartesianTask::Ptr> _p_cart;
         std::vector<SubTask::Ptr> _wheel_pos_xy, _pp_or, _wheel_pos_z;
         std::vector<RollingTask::Ptr> _rolling;
-        OpenSoT::tasks::velocity::Postural::Ptr _postural;
+        OpenSoT::tasks::velocity::Postural::Ptr _postural, _steering_task;
         
         std::vector<SimpleSteering> _steering;
 
