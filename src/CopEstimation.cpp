@@ -1,4 +1,3 @@
-#include <cartesian_interface/ros/RosImpl.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/PointStamped.h>
 #include <RobotInterfaceROS/ConfigFromParam.h>
@@ -24,10 +23,6 @@ int main(int argc, char ** argv)
     nh_priv.setParam("model_type", "RBDL");
     auto cfg = XBot::ConfigOptionsFromParamServer();
     auto robot = XBot::RobotInterface::getRobot(cfg);
-    
-    using namespace XBot::Cartesian;
-    
-    RosImpl ci;
     
     std::vector<std::string> wheel_names = {"wheel_1", "wheel_2", "wheel_3", "wheel_4"};
     std::vector<ros::Subscriber> subs;
@@ -57,7 +52,6 @@ int main(int argc, char ** argv)
         robot->sense();
         
         
-        
         /* Compute COP */
         double fz = 0.0;
         double ground_z = 0.0;
@@ -66,7 +60,7 @@ int main(int argc, char ** argv)
         for(int i = 0; i < wheel_names.size(); i++)
         {
             Eigen::Affine3d w_T_f;
-            ci.getPoseFromTf(wheel_names[i], "pelvis", w_T_f);
+            robot->model().getPose(wheel_names[i], "pelvis", w_T_f);
             
             double fz_i = w_T_f.linear().row(2).dot(g_forces[i]);
             
