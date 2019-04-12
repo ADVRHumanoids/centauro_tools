@@ -167,9 +167,6 @@ target_link_libraries(centauro_polygon_publisher ${catkin_LIBRARIES})
 add_executable(centauro_cop_estimation src/CopEstimation.cpp)
 target_link_libraries(centauro_cop_estimation ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 
-add_executable(centauro_force_estimation src/ForceEstimation.cpp)
-target_link_libraries(centauro_force_estimation ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
-
 add_executable(imu_orientation_control src/ImuOrientationControl.cpp)
 target_link_libraries(imu_orientation_control ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 
@@ -238,12 +235,6 @@ install(TARGETS centauro_cop_estimation centauro_cop_estimation
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-
-install(TARGETS centauro_force_estimation centauro_force_estimation
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 install(TARGETS CartesianWheeledMotion CartesianWheeledMotion
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
