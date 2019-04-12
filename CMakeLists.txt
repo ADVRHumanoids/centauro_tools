@@ -170,6 +170,9 @@ target_link_libraries(centauro_force_estimation ${catkin_LIBRARIES} ${XBotInterf
 add_executable(imu_orientation_control src/ImuOrientationControl.cpp)
 target_link_libraries(imu_orientation_control ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 
+add_executable(centauro_suspensions src/CentauroSuspensionModule.cpp)
+target_link_libraries(centauro_suspensions ${catkin_LIBRARIES} ${OpenSoT_LIBRARIES} ${XBotInterface_LIBRARIES})
+
 add_executable(centauro_reset_world src/CentauroCiResetWorld.cpp)
 target_link_libraries(centauro_reset_world ${catkin_LIBRARIES} ${XBotInterface_LIBRARIES})
 add_executable(velocity_motion src/velocity_motion.cpp)
@@ -181,6 +184,11 @@ target_link_libraries(CartesianWheeledMotion ${cartesian_interface_LIBRARIES} ${
 add_library(HeriHand SHARED src/HeriHand.cpp)
 target_link_libraries(HeriHand ${XCM_LIBRARIES})
 ycm_library_install(HeriHand 1 0 0)
+
+
+add_library(CentauroCartesioAddon SHARED src/CartesioAddon.cpp)
+target_link_libraries(CentauroCartesioAddon ${cartesian_interface_LIBRARIES} ${OpenSoT_LIBRARIES} yaml-cpp)
+ycm_library_install(CentauroCartesioAddon 1 0 0)
 
 #############
 ## Install ##
@@ -210,6 +218,12 @@ install(TARGETS centauro_polygon_publisher centauro_polygon_publisher
 )
 
 install(TARGETS velocity_motion velocity_motion
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(TARGETS centauro_suspensions centauro_suspensions
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
