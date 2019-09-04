@@ -136,7 +136,7 @@ namespace XBot { namespace Cartesian {
     private:
         
         const int NUM_WHEELS = 4;
-        const float RADIUS = 0.078;
+        const float RADIUS = 0.0875;
 
         static ProblemDescription __generate_tasks();
 
