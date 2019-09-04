@@ -33,7 +33,7 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     }
 
     
-    std::vector<std::string> steering_joints = {"ankle_yaw_1", "ankle_yaw_2", "ankle_yaw_3", "ankle_yaw_4"};
+    std::vector<std::string> steering_joints = {"fl_ankle_yaw_joint", "fr_ankle_yaw_joint", "hl_ankle_yaw_joint", "hr_ankle_yaw_joint"};
     std::vector<bool> disable_steering(_model->getJointNum(), true);
     std::list<uint> steering_joints_ids;
     
@@ -49,10 +49,10 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
     spinning_only[1] = true;
     spinning_only[2] = true;
     spinning_only[5] = true;
-    setActiveJoints(_model, "j_wheel_1", spinning_only);
-    setActiveJoints(_model, "j_wheel_2", spinning_only);
-    setActiveJoints(_model, "j_wheel_3", spinning_only);
-    setActiveJoints(_model, "j_wheel_4", spinning_only);
+    setActiveJoints(_model, "fl_wheel_joint", spinning_only);
+    setActiveJoints(_model, "fr_wheel_joint", spinning_only);
+    setActiveJoints(_model, "hl_wheel_joint", spinning_only);
+    setActiveJoints(_model, "hr_wheel_joint", spinning_only);
 
     auto pos_idx = OpenSoT::Indices::range(0,2);
     auto pos_idx_xy = OpenSoT::Indices::range(0,1);
@@ -64,21 +64,34 @@ WheeledMotionImpl::WheeledMotionImpl(ModelInterface::Ptr model):
 
     std::vector<CartesianTask::TaskPtr> ee_tasks;
 
-    for(int i = 0; i < _model->arms(); i++)
-    {
-        std::string ee_name = "arm" + std::to_string(i+1) + "_8";
-        
-        auto ee_cart = boost::make_shared<CartesianTask>("ARM_CART_" + std::to_string(i),
+    std::string ee_name = "l_wrist_yaw";
+      
+    auto ee_cart_left = boost::make_shared<CartesianTask>("ARM_CART_LEFT",
                                                          _q,
                                                          *_model,
                                                          ee_name,
                                                          "pelvis"
                                                         );
         
-        ee_cart->setLambda(0.1);
-        _cartesian_tasks.push_back(ee_cart);
-        ee_tasks.push_back(ee_cart);
-    }
+    ee_cart_left->setLambda(0.1);
+    _cartesian_tasks.push_back(ee_cart_left);
+    ee_tasks.push_back(ee_cart_left);
+    
+    ee_name = "r_wrist_yaw";
+      
+    auto ee_cart_right = boost::make_shared<CartesianTask>("ARM_CART_RIGHT",
+                                                         _q,
+                                                         *_model,
+                                                         ee_name,
+                                                         "pelvis"
+                                                        );
+        
+    ee_cart_right->setLambda(0.1);
+    _cartesian_tasks.push_back(ee_cart_right);
+    ee_tasks.push_back(ee_cart_right);
+
+
+
 
     for(int i = 0; i < NUM_WHEELS; i++)
     {
@@ -448,16 +461,16 @@ ProblemDescription WheeledMotionImpl::__generate_tasks()
     AggregatedTask tasks;
     
     tasks.push_back( MakeCartesian("pelvis"  ,"world" ));
-    tasks.push_back( MakeCartesian("wheel_1" ,"pelvis"));
-    tasks.push_back( MakeCartesian("wheel_2" ,"pelvis"));
-    tasks.push_back( MakeCartesian("wheel_3" ,"pelvis"));
-    tasks.push_back( MakeCartesian("wheel_4" ,"pelvis"));
-    tasks.push_back( MakeCartesian("ankle2_1","world" ));
-    tasks.push_back( MakeCartesian("ankle2_2","world" ));
-    tasks.push_back( MakeCartesian("ankle2_3","world" ));
-    tasks.push_back( MakeCartesian("ankle2_4","world" ));
-    tasks.push_back( MakeCartesian("arm1_8"  ,"pelvis"));
-    tasks.push_back( MakeCartesian("arm2_8"  ,"pelvis"));
+    tasks.push_back( MakeCartesian("fl_wheel" ,"pelvis"));
+    tasks.push_back( MakeCartesian("fr_wheel" ,"pelvis"));
+    tasks.push_back( MakeCartesian("hl_wheel" ,"pelvis"));
+    tasks.push_back( MakeCartesian("hr_wheel" ,"pelvis"));
+    tasks.push_back( MakeCartesian("fl_ankle_yaw","world" ));
+    tasks.push_back( MakeCartesian("fr_ankle_yaw","world" ));
+    tasks.push_back( MakeCartesian("hl_ankle_yaw","world" ));
+    tasks.push_back( MakeCartesian("hr_ankle_yaw","world" ));
+    tasks.push_back( MakeCartesian("l_wrist_yaw"  ,"pelvis"));
+    tasks.push_back( MakeCartesian("r_wrist_yaw"  ,"pelvis"));
 
     return ProblemDescription(tasks);
 }
